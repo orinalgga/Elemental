@@ -80,220 +80,318 @@ class Sprite:
         return img
 
 
-# ---------------- 머리 ----------------
-def bangs_bottom(x, base):
-    # 둥근 물결 앞머리: 3칸마다 한 번씩 내려옴
-    return base + (0, 1, 2, 1)[x % 4]
+# ======================================================================
+# 비율: 약 2등신. 머리 1~14줄, 몸 15~29줄. 원소마다 머리 모양과 옷이 다르다.
+# 보기(view): 0 앞, 1 옆(오른쪽), 2 뒤.  걸음(step): 0 서기, 1 왼발, 2 오른발
+# ======================================================================
+
+def face_front(sp, bangs, mouth='small'):
+    sp.ellipse(12, 9.4, 5.4, 4.9, 'S', lambda x, y: y >= bangs(x))
+    sp.recolor('S', 's', lambda x, y: y == bangs(x))
+    for ex in (9, 13):
+        sp.set(ex, 8, 'E'); sp.set(ex + 1, 8, 'E')
+        sp.set(ex, 9, 'I'); sp.set(ex + 1, 9, 'W')
+        sp.set(ex, 10, 'i'); sp.set(ex + 1, 10, 'I')
+    sp.set(8, 8, 'E'); sp.set(15, 8, 'E')
+    sp.set(8, 11, 'P'); sp.set(15, 11, 'P')
+    if mouth == 'grin':
+        sp.set(11, 12, 'M'); sp.set(12, 12, 'M')
+    else:
+        sp.set(12, 12, 'M')
 
 
-def eye(sp, x, y):
-    # 2x4 애니 눈: 속눈썹, 반짝이, 홍채, 아래쪽 밝은 홍채
-    sp.set(x, y, 'E'); sp.set(x + 1, y, 'E')
-    sp.set(x, y + 1, 'D'); sp.set(x + 1, y + 1, 'W')
-    sp.set(x, y + 2, 'I'); sp.set(x + 1, y + 2, 'D')
-    sp.set(x, y + 3, 'i'); sp.set(x + 1, y + 3, 'I')
+def face_side(sp, bangs, mouth='small'):
+    sp.ellipse(13.4, 9.4, 4.7, 4.9, 'S', lambda x, y: x >= 10 and y >= bangs(x))
+    sp.recolor('S', 's', lambda x, y: y == bangs(x) and x >= 10)
+    sp.set(11, 10, 's')
+    sp.set(15, 8, 'E'); sp.set(16, 8, 'E'); sp.set(17, 8, 'E')
+    sp.set(15, 9, 'I'); sp.set(16, 9, 'W')
+    sp.set(15, 10, 'i'); sp.set(16, 10, 'I')
+    sp.set(14, 11, 'P')
+    sp.set(17, 12, 'M')
+    if mouth == 'grin':
+        sp.set(16, 12, 'M')
 
 
-def head_front(sp, look):
-    sp.ellipse(12, 10.5, 9.4, 8.6, 'H')                       # 머리 전체
-    sp.rect(3, 11, 5, 17, 'H'); sp.rect(18, 11, 20, 17, 'H')   # 옆머리
-    sp.set(3, 18, 'H'); sp.set(20, 18, 'H')
-    if look.get('long'):                                      # 긴 머리
-        sp.rect(3, 11, 5, 22, 'H'); sp.rect(18, 11, 20, 22, 'H')
-        sp.set(4, 23, 'H'); sp.set(19, 23, 'H')
-    sp.ellipse(12, 12.6, 6.9, 5.9, 'S', lambda x, y: y >= bangs_bottom(x, 8))  # 얼굴
-    sp.recolor('H', 'h', lambda x, y: x >= 17 and y >= 6)      # 오른쪽 그림자
-    sp.recolor('H', 'h', lambda x, y: y >= 15 and x <= 5)
-    for x in range(7, 14):                                    # 천사 고리
-        sp.set(x, 5 if x < 12 else 4, 'L')
-    sp.set(12, 0, 'H'); sp.set(13, 0, 'H'); sp.set(12, 1, 'H')  # 바보털
-    # 눈 (2x3, 반짝이)
-    for ex in (8, 14):
-        eye(sp, ex, 11)
-    sp.set(7, 11, 'E'); sp.set(16, 11, 'E')                     # 속눈썹
-    sp.set(7, 15, 'P'); sp.set(16, 15, 'P')                     # 볼
-    sp.set(11, 16, 'M'); sp.set(12, 16, 'M')                    # 입
-    sp.recolor('S', 's', lambda x, y: y == bangs_bottom(x, 8) and x >= 6)  # 앞머리 그림자
-    look['accessory_front'](sp)
+def neck(sp, view):
+    if view == 1:
+        sp.rect(12, 14, 13, 15, 's')
+    else:
+        sp.rect(11, 14, 12, 15, 's')
 
 
-def head_side(sp, look):
-    sp.ellipse(11.5, 10.5, 9.2, 8.6, 'H')
-    sp.rect(3, 11, 7, 17, 'H'); sp.set(4, 18, 'H'); sp.set(5, 18, 'H')   # 뒷머리
-    if look.get('long'):
-        sp.rect(4, 11, 8, 22, 'H'); sp.set(5, 23, 'H'); sp.set(6, 23, 'H')
-    sp.ellipse(14, 12.6, 6.2, 5.9, 'S', lambda x, y: x >= 9 and y >= bangs_bottom(x, 8))
-    sp.set(10, 13, 's'); sp.set(10, 12, 's')                   # 귀 그늘
-    sp.recolor('H', 'h', lambda x, y: x <= 6 and y >= 6)
-    for x in range(8, 15):
-        sp.set(x, 5 if x < 13 else 4, 'L')
-    sp.set(13, 0, 'H'); sp.set(14, 0, 'H'); sp.set(13, 1, 'H')
-    eye(sp, 16, 11)
-    sp.set(18, 11, 'E')
-    sp.set(15, 15, 'P')
-    sp.set(19, 16, 'M')
-    sp.recolor('S', 's', lambda x, y: y == bangs_bottom(x, 8) and x >= 9)
-    look['accessory_side'](sp)
-
-
-def head_back(sp, look):
-    sp.ellipse(12, 10.5, 9.4, 8.6, 'H')
-    sp.rect(3, 11, 20, 16, 'H')
-    end = 21 if look.get('long') else 17
-    sp.rect(3, 11, 20, end - 1, 'H')
-    for x in range(3, 21):                                    # 둥근 물결 끝머리
-        for y in range(end, bangs_bottom(x, end) + 1):
-            sp.set(x, y, 'H')
-    sp.recolor('H', 'h', lambda x, y: x >= 18 or y >= bangs_bottom(x, end - 1))
-    for x in (7, 11, 15):                                     # 머리카락 결
-        for y in range(9, 15):
-            sp.set(x + (y > 12), y, 'h')
-    for x in range(7, 15):
-        sp.set(x, 5, 'L')
-    sp.set(12, 0, 'H'); sp.set(13, 0, 'H'); sp.set(12, 1, 'H')
-    look['accessory_back'](sp)
-
-
-# ---------------- 몸 ----------------
-def body_front(sp, look, step):
-    # step: 0 서기, 1 왼발 앞, 2 오른발 앞
-    lu = -1 if step == 1 else 0
-    ru = -1 if step == 2 else 0
-    # 다리와 신발
-    sp.rect(8, 26 + lu, 10, 27 + lu, 'S'); sp.rect(13, 26 + ru, 15, 27 + ru, 'S')
-    sp.rect(7, 28 + lu, 10, 29 + lu, 'W'); sp.rect(13, 28 + ru, 16, 29 + ru, 'W')
-    sp.rect(7, 29 + lu, 10, 29 + lu, look['accent2']); sp.rect(13, 29 + ru, 16, 29 + ru, look['accent2'])
-    # 반바지
-    sp.rect(7, 24, 16, 25, 'N'); sp.set(11, 25, None); sp.set(12, 25, None)
-    sp.set(7, 25, look['accent']); sp.set(16, 25, look['accent'])
-    # 상체
-    sp.rect(7, 18, 16, 22, 'N')
-    sp.rect(10, 18, 13, 22, 'W')
-    sp.set(11, 20, 'f'); sp.set(12, 20, 'f'); sp.set(11, 19, 'F')
-    sp.rect(9, 18, 9, 22, look['accent']); sp.rect(14, 18, 14, 22, look['accent'])
-    sp.rect(15, 19, 16, 22, 'n')
-    sp.rect(7, 23, 16, 23, 'B'); sp.set(11, 23, 'Y'); sp.set(12, 23, 'Y')
-    # 팔 (걸을 때 반대로 흔들림)
+def arms_front(sp, step, sleeve, sleeve_rows, hand='S', x_l=6, x_r=16, shade=None):
     la = 1 if step == 2 else 0
     ra = 1 if step == 1 else 0
-    sp.rect(5, 19, 6, 21 + la, 'N'); sp.rect(5, 22 + la, 6, 22 + la, 'G')
-    sp.rect(17, 19, 18, 21 + ra, 'n'); sp.rect(17, 22 + ra, 18, 22 + ra, 'G')
+    for x0, a, c in ((x_l, la, sleeve), (x_r, ra, shade or sleeve)):
+        sp.rect(x0, 16, x0 + 1, 16 + sleeve_rows - 1 + a, c)
+        sp.rect(x0, 16 + sleeve_rows + a, x0 + 1, 20 + a, 'S')
+        sp.rect(x0, 20 + a, x0 + 1, 20 + a, hand)
 
 
-def body_side(sp, look, step):
-    # 앞다리/뒷다리가 앞뒤로 벌어짐
+def arm_side(sp, step, sleeve, sleeve_rows, hand='S'):
+    sw = {0: 0, 1: 1, 2: -1}[step]
+    x0 = 12 + sw
+    sp.rect(x0, 16, x0 + 1, 16 + sleeve_rows - 1, sleeve)
+    sp.rect(x0, 16 + sleeve_rows, x0 + 1, 20, 'S')
+    sp.rect(x0, 20, x0 + 1, 20, hand)
+
+
+def legs_front(sp, step, pants, shoe, top=23, sock=None, sock_row=None, wide=False):
+    lu = -1 if step == 1 else 0
+    ru = -1 if step == 2 else 0
+    (l0, l1), (r0, r1) = ((8, 10), (13, 15)) if wide else ((9, 10), (13, 14))
+    for x0, x1, u, sx0, sx1 in ((l0, l1, lu, l0 - 1, l1), (r0, r1, ru, r0, r1 + 1)):
+        sp.rect(x0, top, x1, 27 + u, pants)
+        if sock:
+            sp.rect(x0, sock_row + u, x1, 27 + u, sock)
+        sp.rect(sx0, 28 + u, sx1, 29 + u, shoe)
+
+
+def legs_side(sp, step, pants, pants_back, shoe, shoe_back, top=23, sock=None, sock_row=None):
     off = {0: (0, 0), 1: (2, -2), 2: (-2, 2)}[step]
-    for i, (dx, c_leg) in enumerate(((off[1], 's'), (off[0], 'S'))):   # 뒷다리 먼저
-        x0 = 10 + dx
-        sp.rect(x0, 26, x0 + 2, 27, c_leg)
-        sp.rect(x0, 28, x0 + 3, 29, 'W' if i else 'w')
-        sp.rect(x0, 29, x0 + 3, 29, look['accent2'])
-    sp.rect(9, 24, 15, 25, 'N')
-    sp.rect(9, 18, 15, 22, 'N')
-    sp.rect(14, 18, 15, 22, 'W'); sp.set(15, 20, 'f')
-    sp.rect(13, 18, 13, 22, look['accent'])
-    sp.rect(9, 23, 15, 23, 'B'); sp.set(15, 23, 'Y')
-    sp.rect(8, 17, 10, 18, look['accent'])                    # 후드
-    swing = {0: 0, 1: 1, 2: -1}[step]
-    sp.rect(11 + swing, 19, 12 + swing, 21, 'n')
-    sp.rect(11 + swing, 22, 12 + swing, 22, 'G')
+    for dx, p, s_ in ((off[1], pants_back, shoe_back), (off[0], pants, shoe)):
+        x0 = 11 + dx
+        sp.rect(x0, top, x0 + 1, 27, p)
+        if sock:
+            sp.rect(x0, sock_row, x0 + 1, 27, sock)
+        sp.rect(x0, 28, x0 + 2, 29, s_)
 
 
-def body_back(sp, look, step):
-    lu = -1 if step == 1 else 0
-    ru = -1 if step == 2 else 0
-    sp.rect(8, 26 + lu, 10, 27 + lu, 'S'); sp.rect(13, 26 + ru, 15, 27 + ru, 'S')
-    sp.rect(7, 28 + lu, 10, 29 + lu, 'W'); sp.rect(13, 28 + ru, 16, 29 + ru, 'W')
-    sp.rect(7, 29 + lu, 10, 29 + lu, look['accent2']); sp.rect(13, 29 + ru, 16, 29 + ru, look['accent2'])
-    sp.rect(7, 24, 16, 25, 'N'); sp.set(11, 25, None); sp.set(12, 25, None)
-    sp.rect(7, 18, 16, 22, 'N')
-    sp.rect(9, 20, 14, 21, look['accent'])                    # 후드
-    sp.rect(10, 21, 13, 21, 'n')
-    sp.rect(7, 23, 16, 23, 'B')
-    la = 1 if step == 2 else 0
-    ra = 1 if step == 1 else 0
-    sp.rect(5, 19, 6, 21 + la, 'n'); sp.rect(5, 22 + la, 6, 22 + la, 'G')
-    sp.rect(17, 19, 18, 21 + ra, 'N'); sp.rect(17, 22 + ra, 18, 22 + ra, 'G')
+# ---------------- 화랑 (불): 삐죽머리, 머리띠, 빨간 트레이닝 재킷 ----------------
+def hwarang(sp, view, step):
+    # 몸
+    if view == 0:
+        legs_front(sp, step, 'N', 'R')
+        sp.rect(8, 15, 15, 21, 'R'); sp.rect(14, 16, 15, 21, 'r')
+        sp.rect(11, 15, 12, 21, 'K'); sp.set(11, 17, 'Y'); sp.set(12, 18, 'Y')
+        sp.rect(8, 21, 15, 21, 'Y')
+        sp.rect(8, 22, 15, 22, 'N')
+        arms_front(sp, step, 'R', 4, shade='r')
+    elif view == 1:
+        legs_side(sp, step, 'N', 'n', 'R', 'r')
+        sp.rect(10, 15, 14, 21, 'R'); sp.rect(14, 15, 14, 21, 'K')
+        sp.rect(10, 21, 14, 21, 'Y'); sp.rect(10, 22, 14, 22, 'N')
+        arm_side(sp, step, 'r', 4)
+    else:
+        legs_front(sp, step, 'N', 'R')
+        sp.rect(8, 15, 15, 21, 'R'); sp.rect(10, 17, 13, 18, 'Y')   # 등 줄무늬
+        sp.rect(8, 21, 15, 21, 'Y'); sp.rect(8, 22, 15, 22, 'N')
+        arms_front(sp, step, 'r', 4, shade='R')
+    neck(sp, view)
+    # 머리
+    spikes = [(6, 2), (7, 1), (9, 0), (10, 1), (13, 0), (14, 0), (16, 1), (17, 2), (18, 4), (5, 4)]
+    cx = 12 if view != 1 else 11.5
+    sp.ellipse(cx, 7.6, 7.0, 6.6, 'H')
+    for x, y in spikes:
+        sp.set(x if view != 1 else x - 1, y, 'H')
+    if view == 1:
+        sp.set(4, 6, 'H'); sp.set(3, 7, 'H'); sp.set(4, 9, 'H'); sp.set(3, 10, 'H')   # 뒷머리 삐죽
+    bangs = lambda x: 5 + (0, 2, 1, 2)[x % 4]
+    if view == 0:
+        face_front(sp, bangs, 'grin')
+    elif view == 1:
+        face_side(sp, bangs, 'grin')
+    sp.recolor('H', 'h', lambda x, y: (x >= 16 if view != 1 else x <= 6) and y >= 4)
+    hb = (6, 17) if view != 1 else (5, 16)
+    sp.rect(hb[0], 4, hb[1], 4, 'Y')                                   # 머리띠
+    if view == 2:
+        sp.rect(17, 5, 17, 5, 'Y'); sp.set(18, 6, 'Y'); sp.set(19, 7, 'Y'); sp.set(18, 8, 'Y')
+    if view == 1:
+        sp.rect(3, 4, 4, 5, 'Y'); sp.set(2, 6, 'Y')
+    for x in range(8, 12):
+        sp.set(x if view != 1 else x - 1, 2, 'L')
 
 
-VIEWS = [(head_front, body_front), (head_side, body_side), (head_back, body_back)]
+# ---------------- 수아 (물): 긴 생머리, 리본, 세일러 블라우스와 주름치마 ----------------
+def sua(sp, view, step):
+    long_hair = 'h'
+    if view == 0:
+        sp.rect(5, 8, 6, 20, long_hair); sp.rect(17, 8, 18, 20, long_hair)
+        sp.set(5, 21, long_hair); sp.set(18, 21, long_hair)
+    elif view == 1:
+        sp.rect(4, 8, 8, 20, long_hair); sp.set(5, 21, long_hair); sp.set(6, 21, long_hair)
+    # 몸
+    if view == 0:
+        legs_front(sp, step, 'S', 'C', top=24, sock='W', sock_row=26)
+        sp.rect(8, 15, 15, 20, 'W'); sp.rect(14, 16, 15, 20, 'w')
+        sp.rect(8, 15, 15, 15, 'C'); sp.set(9, 16, 'C'); sp.set(14, 16, 'C'); sp.set(10, 17, 'C'); sp.set(13, 17, 'C')
+        sp.rect(11, 17, 12, 18, 'M')                                  # 스카프
+        sp.rect(7, 21, 16, 23, 'C')
+        for x in (9, 12, 15):
+            sp.rect(x, 22, x, 23, 'c')
+        arms_front(sp, step, 'W', 3, shade='w')
+    elif view == 1:
+        legs_side(sp, step, 'S', 's', 'C', 'c', top=24, sock='W', sock_row=26)
+        sp.rect(10, 15, 14, 20, 'W'); sp.rect(10, 15, 11, 17, 'C'); sp.set(14, 17, 'M')
+        sp.rect(9, 21, 15, 23, 'C'); sp.set(11, 22, 'c'); sp.set(13, 23, 'c')
+        arm_side(sp, step, 'w', 3)
+    else:
+        legs_front(sp, step, 'S', 'C', top=24, sock='W', sock_row=26)
+        sp.rect(8, 15, 15, 20, 'W')
+        sp.rect(7, 21, 16, 23, 'C')
+        for x in (9, 12, 15):
+            sp.rect(x, 22, x, 23, 'c')
+        arms_front(sp, step, 'w', 3, shade='W')
+    neck(sp, view)
+    # 머리
+    cx = 12 if view != 1 else 11.5
+    sp.ellipse(cx, 7.4, 6.9, 6.6, 'H')
+    if view == 2:
+        sp.rect(5, 7, 18, 20, 'H')
+        for x in range(5, 19):
+            sp.set(x, 21, 'H' if x % 2 else None)
+        sp.recolor('H', 'h', lambda x, y: x >= 16 or x in (8, 12) and y > 8)
+    bangs = lambda x: 6 if x != 11 else 5                              # 일자 앞머리
+    if view == 0:
+        face_front(sp, bangs)
+        sp.recolor('H', 'h', lambda x, y: x >= 16 and y >= 4)
+    elif view == 1:
+        face_side(sp, bangs)
+        sp.recolor('H', 'h', lambda x, y: x <= 6 and y >= 4)
+    for x in range(8, 12):
+        sp.set(x if view != 1 else x - 1, 2, 'L')
+    # 흰 리본
+    rx = {0: 16, 1: 6, 2: 6}[view]
+    sp.set(rx, 1, 'W'); sp.set(rx + 2, 1, 'W'); sp.set(rx, 2, 'W'); sp.set(rx + 2, 2, 'W'); sp.set(rx + 1, 2, 'C')
 
 
-def make_frame(look, view, step):
-    head, body = VIEWS[view]
+# ---------------- 풍후 (바람): 옆으로 넘긴 머리, 휘날리는 머리끈, 짧은 망토 ----------------
+def punghu(sp, view, step):
+    if view == 0:
+        legs_front(sp, step, 'n', 'b', sock='b', sock_row=26)
+        sp.rect(8, 19, 15, 22, 'U'); sp.rect(8, 21, 15, 21, 'B'); sp.set(12, 21, 'Y')
+        sp.rect(6, 15, 17, 19, 'V'); sp.rect(15, 15, 17, 19, 'v')       # 망토
+        sp.set(6, 20, 'V'); sp.set(17, 20, 'v'); sp.set(11, 15, 'Y'); sp.set(12, 15, 'Y')
+        la = 1 if step == 2 else 0
+        ra = 1 if step == 1 else 0
+        sp.rect(6, 20 + la, 7, 21 + la, 'S'); sp.rect(16, 20 + ra, 17, 21 + ra, 'S')
+    elif view == 1:
+        legs_side(sp, step, 'n', 'm', 'b', 'b', sock='b', sock_row=26)
+        sp.rect(10, 19, 14, 22, 'U'); sp.rect(10, 21, 14, 21, 'B')
+        wave = (0, 1, 0)[step]
+        sp.rect(8, 15, 15, 19, 'V'); sp.rect(6, 16 + wave, 7, 19 + wave, 'v'); sp.set(5, 18 + wave, 'v')
+        sp.set(14, 15, 'Y')
+        sw = {0: 0, 1: 1, 2: -1}[step]
+        sp.rect(12 + sw, 20, 13 + sw, 21, 'S')
+    else:
+        legs_front(sp, step, 'n', 'b', sock='b', sock_row=26)
+        sp.rect(8, 19, 15, 22, 'U'); sp.rect(8, 21, 15, 21, 'B')
+        sp.rect(6, 15, 17, 20, 'V'); sp.rect(9, 15, 14, 16, 'v')        # 후드
+        la = 1 if step == 2 else 0
+        ra = 1 if step == 1 else 0
+        sp.rect(6, 21 + la, 7, 21 + la, 'S'); sp.rect(16, 21 + ra, 17, 21 + ra, 'S')
+    neck(sp, view)
+    cx = 12 if view != 1 else 11.5
+    sp.ellipse(cx, 7.6, 7.0, 6.6, 'H')
+    if view != 1:
+        sp.set(4, 9, 'H'); sp.set(19, 10, 'H'); sp.set(5, 11, 'H')
+    else:
+        sp.set(3, 9, 'H'); sp.set(4, 11, 'H')
+    bangs = lambda x: min(7, 4 + max(0, x - 5) // 3)                   # 오른쪽으로 넘긴 앞머리
+    if view == 0:
+        face_front(sp, bangs)
+        sp.recolor('H', 'h', lambda x, y: x >= 16 and y >= 4)
+    elif view == 1:
+        face_side(sp, lambda x: 5 + (x % 3 == 0))
+        sp.recolor('H', 'h', lambda x, y: x <= 6 and y >= 4)
+    else:
+        sp.recolor('H', 'h', lambda x, y: x >= 16 or y >= 12)
+        sp.rect(11, 13, 12, 16, 'h'); sp.set(12, 17, 'h')             # 짧은 꽁지머리
+    if view == 1:
+        sp.rect(4, 11, 5, 13, 'h'); sp.set(3, 14, 'h')
+    # 휘날리는 머리끈
+    if view == 0:
+        sp.rect(6, 4, 17, 4, 'T'); sp.set(5, 5, 'T'); sp.set(4, 5, 'T'); sp.set(3, 6, 'T'); sp.set(2, 6, 'T'); sp.set(3, 7, 't')
+    elif view == 1:
+        sp.rect(5, 4, 16, 4, 'T')
+        sp.set(4, 5, 'T'); sp.set(3, 5, 'T'); sp.set(2, 6, 'T'); sp.set(1, 6, 'T'); sp.set(2, 7, 't'); sp.set(1, 8, 't')
+    else:
+        sp.rect(6, 4, 17, 4, 'T'); sp.rect(11, 5, 12, 5, 'T'); sp.rect(10, 6, 10, 9, 't'); sp.rect(13, 6, 13, 10, 'T')
+    for x in range(8, 12):
+        sp.set(x if view != 1 else x - 1, 2, 'L')
+
+
+# ---------------- 강돌 (땅): 두건, 굵은 눈썹, 멜빵 작업복, 큰 장갑 ----------------
+def gangdol(sp, view, step):
+    if view == 0:
+        legs_front(sp, step, 'O', 'b', wide=True)
+        sp.rect(7, 15, 16, 22, 'K'); sp.rect(15, 16, 16, 22, 'k')
+        sp.rect(9, 18, 14, 22, 'O'); sp.rect(9, 15, 9, 17, 'O'); sp.rect(14, 15, 14, 17, 'O')
+        sp.set(9, 18, 'Y'); sp.set(14, 18, 'Y'); sp.rect(10, 19, 13, 20, 'o2')
+        arms_front(sp, step, 'K', 2, hand='b', x_l=5, x_r=17, shade='k')
+    elif view == 1:
+        legs_side(sp, step, 'O', 'Q', 'b', 'b')
+        sp.rect(9, 15, 15, 22, 'K'); sp.rect(12, 17, 15, 22, 'O'); sp.rect(12, 15, 12, 16, 'O')
+        arm_side(sp, step, 'k', 2, hand='b')
+        sw = {0: 0, 1: 1, 2: -1}[step]
+        sp.rect(12 + sw, 19, 13 + sw, 20, 'S'); sp.rect(11 + sw, 21, 14 + sw, 21, 'b'); sp.rect(12 + sw, 20, 13 + sw, 20, 'b')
+    else:
+        legs_front(sp, step, 'O', 'b', wide=True)
+        sp.rect(7, 15, 16, 22, 'K')
+        sp.rect(9, 15, 9, 19, 'O'); sp.rect(14, 15, 14, 19, 'O'); sp.rect(9, 19, 14, 22, 'O')
+        arms_front(sp, step, 'k', 2, hand='b', x_l=5, x_r=17, shade='K')
+    if view == 0:
+        sp.rect(4, 20 + (step == 2), 7, 21 + (step == 2), 'b'); sp.rect(16, 20 + (step == 1), 19, 21 + (step == 1), 'b')
+    elif view == 2:
+        sp.rect(4, 20 + (step == 2), 7, 21 + (step == 2), 'b'); sp.rect(16, 20 + (step == 1), 19, 21 + (step == 1), 'b')
+    neck(sp, view)
+    cx = 12 if view != 1 else 11.5
+    sp.ellipse(cx, 7.8, 6.9, 6.4, 'H')
+    bangs = lambda x: 6
+    if view == 0:
+        face_front(sp, bangs, 'grin')
+        sp.rect(9, 7, 10, 7, 'h'); sp.rect(13, 7, 14, 7, 'h')         # 굵은 눈썹
+    elif view == 1:
+        face_side(sp, bangs, 'grin')
+        sp.rect(15, 7, 17, 7, 'h')
+    # 두건
+    sp.ellipse(cx, 6.2, 7.2, 5.2, 'A', lambda x, y: y <= 5)
+    sp.recolor('A', 'a', lambda x, y: y == 5 or (x >= 16 if view != 1 else x <= 6))
+    sp.set(9 if view != 1 else 8, 2, 'Y'); sp.set(15 if view != 1 else 14, 3, 'Y')     # 두건 무늬
+    if view == 2:
+        sp.rect(11, 6, 12, 6, 'a'); sp.set(10, 7, 'A'); sp.set(13, 7, 'A'); sp.set(9, 8, 'A'); sp.set(14, 8, 'A')
+    if view == 1:
+        sp.rect(3, 5, 4, 6, 'a'); sp.set(2, 7, 'A')
+
+
+LOOKS = {
+    'hwarang': (hwarang, {
+        'H': (240, 85, 44), 'h': (184, 50, 28), 'L': (255, 154, 90),
+        'I': (226, 84, 31), 'i': (255, 190, 70),
+        'R': (226, 58, 44), 'r': (164, 34, 26), 'K': (44, 44, 54), 'N': (52, 54, 76), 'n': (36, 38, 54)}),
+    'sua': (sua, {
+        'H': (66, 138, 232), 'h': (36, 88, 178), 'L': (160, 210, 255),
+        'I': (40, 120, 220), 'i': (140, 220, 255),
+        'C': (40, 92, 196), 'c': (26, 62, 140)}),
+    'punghu': (punghu, {
+        'H': (70, 182, 108), 'h': (38, 124, 72), 'L': (170, 240, 190),
+        'I': (40, 160, 90), 'i': (170, 250, 190),
+        'V': (66, 150, 108), 'v': (42, 104, 74), 'U': (232, 216, 172), 'n': (78, 84, 70), 'm': (58, 62, 52),
+        'b': (138, 94, 52), 'T': (222, 255, 232), 't': (170, 220, 190)}),
+    'gangdol': (gangdol, {
+        'H': (120, 78, 46), 'h': (84, 52, 28), 'L': (170, 120, 80),
+        'I': (170, 110, 40), 'i': (240, 200, 110),
+        'A': (204, 168, 96), 'a': (160, 126, 66), 'K': (242, 232, 204), 'k': (212, 198, 164),
+        'O': (96, 112, 70), 'Q': (70, 82, 50), 'o2': (76, 90, 56), 'b': (110, 70, 40)}),
+}
+
+
+def make_frame(draw, pal, view, step):
     sp = Sprite()
-    body(sp, look, step)
-    head(sp, look)
+    draw(sp, view, step)
     if step != 0:
-        sp.shift(-1, 24)   # 걸을 때 상체가 살짝 들썩임
+        sp.shift(-1, 23)
     sp.outline()
-    return sp.image(look['palette'])
+    return sp.image({**BASE, **pal})
 
 
-def make_sheet(look):
+def make_sheet(draw, pal):
     sheet = Image.new('RGBA', (W * 3, H * 3), (0, 0, 0, 0))
     for view in range(3):
         for step in range(3):
-            sheet.paste(make_frame(look, view, (0, 1, 2)[step]), (step * W, view * H))
+            sheet.paste(make_frame(draw, pal, view, step), (step * W, view * H))
     return sheet
-
-
-# ---------------- 캐릭터 ----------------
-def flame_clip(points):
-    def draw(sp):
-        for (x, y, c) in points:
-            sp.set(x, y, c)
-    return draw
-
-
-HWARANG = {
-    'palette': {**BASE,
-                'H': (240, 85, 44), 'h': (184, 50, 28), 'L': (255, 154, 90),
-                'I': (226, 84, 31), 'i': (255, 184, 58), 'D': (122, 26, 14),
-                'N': (42, 51, 82), 'n': (27, 34, 56), 'F': (255, 210, 58), 'f': (255, 122, 28)},
-    'accent': 'f', 'accent2': 'f',
-    'accessory_front': flame_clip([(4, 6, 'F'), (5, 6, 'f'), (4, 7, 'f'), (5, 7, 'F'), (5, 5, 'F')]),
-    'accessory_side': flame_clip([(5, 6, 'F'), (6, 6, 'f'), (5, 7, 'f'), (6, 7, 'F'), (6, 5, 'F')]),
-    'accessory_back': flame_clip([(18, 6, 'F'), (19, 6, 'f'), (18, 7, 'f'), (19, 7, 'F'), (18, 5, 'F')]),
-}
-
-SUA = {
-    'palette': {**BASE,
-                'H': (56, 132, 230), 'h': (32, 84, 170), 'L': (150, 205, 255),
-                'I': (40, 120, 220), 'i': (140, 220, 255), 'D': (16, 50, 120),
-                'N': (232, 240, 250), 'n': (180, 196, 222), 'F': (200, 236, 255), 'f': (60, 150, 240)},
-    'accent': 'f', 'accent2': 'f', 'long': True,
-    # 물방울 머리핀
-    'accessory_front': flame_clip([(4, 5, 'F'), (4, 6, 'f'), (5, 6, 'F'), (4, 7, 'f'), (5, 7, 'f')]),
-    'accessory_side': flame_clip([(5, 5, 'F'), (5, 6, 'f'), (6, 6, 'F'), (5, 7, 'f'), (6, 7, 'f')]),
-    'accessory_back': flame_clip([(19, 5, 'F'), (18, 6, 'F'), (19, 6, 'f'), (18, 7, 'f'), (19, 7, 'f')]),
-}
-
-PUNGHU = {
-    'palette': {**BASE,
-                'H': (64, 178, 104), 'h': (36, 120, 70), 'L': (160, 240, 180),
-                'I': (40, 160, 90), 'i': (170, 250, 190), 'D': (14, 70, 40),
-                'N': (40, 74, 64), 'n': (26, 50, 44), 'F': (200, 255, 210), 'f': (90, 220, 140)},
-    'accent': 'f', 'accent2': 'f',
-    # 나뭇잎 머리핀
-    'accessory_front': flame_clip([(4, 6, 'f'), (5, 5, 'f'), (5, 6, 'F'), (4, 7, 'F'), (6, 4, 'f')]),
-    'accessory_side': flame_clip([(5, 6, 'f'), (6, 5, 'f'), (6, 6, 'F'), (5, 7, 'F'), (7, 4, 'f')]),
-    'accessory_back': flame_clip([(19, 6, 'f'), (18, 5, 'f'), (18, 6, 'F'), (19, 7, 'F'), (17, 4, 'f')]),
-}
-
-GANGDOL = {
-    'palette': {**BASE,
-                'H': (140, 90, 52), 'h': (96, 58, 30), 'L': (206, 156, 110),
-                'I': (170, 110, 40), 'i': (240, 200, 110), 'D': (70, 40, 14),
-                'N': (72, 74, 88), 'n': (50, 52, 64), 'F': (200, 200, 210), 'f': (130, 130, 145)},
-    'accent': 'Y', 'accent2': 'f',
-    # 돌멩이 머리핀
-    'accessory_front': flame_clip([(4, 6, 'F'), (5, 6, 'F'), (4, 7, 'f'), (5, 7, 'f'), (6, 7, 'f')]),
-    'accessory_side': flame_clip([(5, 6, 'F'), (6, 6, 'F'), (5, 7, 'f'), (6, 7, 'f'), (7, 7, 'f')]),
-    'accessory_back': flame_clip([(18, 6, 'F'), (19, 6, 'F'), (17, 7, 'f'), (18, 7, 'f'), (19, 7, 'f')]),
-}
-
-CHARACTERS = {'hwarang': HWARANG, 'sua': SUA, 'punghu': PUNGHU, 'gangdol': GANGDOL}
 
 
 # ---------------- 허수아비 ----------------
@@ -329,9 +427,9 @@ DUMMIES = {
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
-    for name, look in CHARACTERS.items():
+    for name, (draw, pal) in LOOKS.items():
         path = os.path.join(OUT, f'{name}.png')
-        make_sheet(look).save(path)
+        make_sheet(draw, pal).save(path)
         print('saved', os.path.normpath(path))
     for el, (hat, dark) in DUMMIES.items():
         sheet = Image.new('RGBA', (W * 2, H), (0, 0, 0, 0))   # 칸 0 보통, 칸 1 맞음
