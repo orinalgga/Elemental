@@ -287,20 +287,26 @@
     function drawSheet(ctx, sheet, x, y, o, size) {
         const anim = pickAnim(sheet, o);
         const fw = sheet.frameWidth, fh = sheet.frameHeight;
-        const frames = anim.frames || 1;
+        // frames: 칸 수(숫자) 또는 칸 번호 순서([1, 0, 2, 0] 같은 걷기 순환)
+        const seq = Array.isArray(anim.frames) ? anim.frames : null;
+        const count = seq ? seq.length : (anim.frames || 1);
         const fps = anim.fps == null ? 8 : anim.fps;
-        const frame = fps === 0 ? 0 : Math.floor((o.time || 0) * fps) % frames;
-        const col = (anim.col || 0) + frame;
+        const idx = fps === 0 ? 0 : Math.floor((o.time || 0) * fps) % count;
+        const col = seq ? seq[idx] : (anim.col || 0) + idx;
+        // directions: 방향별 줄 번호 { down, side, up }. 있으면 anim.row 대신 쓴다.
+        const dir = o.dir || 'down';
+        const row = sheet.directions ? (sheet.directions[dir] ?? 0) : (anim.row || 0);
         const dh = (sheet.displayHeight || 72) * size;
         const dw = dh * (fw / fh);
         const feetY = y + 21 * size;                       // 그림자 위치와 맞춤
         const anchorY = sheet.anchorY == null ? 1 : sheet.anchorY;  // 프레임 안에서 발이 닿는 높이 (0 위, 1 아래)
-        const flip = (o.facing || 1) * (sheet.facesRight === false ? -1 : 1) < 0;
+        const sideways = !sheet.directions || dir === 'side';
+        const flip = sideways && (o.facing || 1) * (sheet.facesRight === false ? -1 : 1) < 0;
         ctx.save();
         ctx.translate(x, feetY);
         if (flip) ctx.scale(-1, 1);
         ctx.imageSmoothingEnabled = sheet.pixelArt ? false : true;
-        ctx.drawImage(sheet.img, col * fw, (anim.row || 0) * fh, fw, fh, -dw / 2, -dh * anchorY, dw, dh);
+        ctx.drawImage(sheet.img, col * fw, row * fh, fw, fh, -dw / 2, -dh * anchorY, dw, dh);
         if (o.hurt && !(sheet.anims && sheet.anims.hurt)) {
             // 피격 프레임이 없으면 붉게 번쩍
             ctx.globalCompositeOperation = 'source-atop';

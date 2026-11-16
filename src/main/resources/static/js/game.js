@@ -222,6 +222,7 @@
 
         p.aim = angleTo(p, mouse);
         p.facing = Math.cos(p.aim) >= 0 ? 1 : -1;
+        p.dir = Math.sin(p.aim) > 0.6 ? 'down' : Math.sin(p.aim) < -0.6 ? 'up' : 'side';
         p.moving = !!p.dash;
 
         // 이동
@@ -357,7 +358,7 @@
         const hurt = t - u.hurtAt < 0.25;
         if (isPlayer) {
             const blink = ((t + u.blinkSeed) % 3.2) < 0.13;
-            Sprites.drawCharacter(ctx, u.x, u.y, { kind: u.spec.id, facing: u.facing, walk: u.walk, moving: u.moving, time: t, blink, hurt });
+            Sprites.drawCharacter(ctx, u.x, u.y, { kind: u.spec.id, facing: u.facing, dir: u.dir, walk: u.walk, moving: u.moving, time: t, blink, hurt });
         } else {
             Sprites.drawCharacter(ctx, u.x, u.y, { kind: 'dummy', color: u.color, time: t, hurt, facing: u.facing, moving: true, walk: u.walk });
         }

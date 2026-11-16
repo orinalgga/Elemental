@@ -1,0 +1,17 @@
+{
+  "_설명": "art/pixel/make_sprites.py 로 만든 도트 시트. 줄 = 방향(앞, 옆, 뒤), 칸 = 서기, 왼발, 오른발.",
+  "hwarang": {
+    "src": "hwarang.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "directions": { "down": 0, "side": 1, "up": 2 },
+    "anims": {
+      "idle": { "frames": [0], "fps": 0 },
+      "walk": { "frames": [1, 0, 2, 0], "fps": 8 }
+    }
+  }
+}
