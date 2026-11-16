@@ -32,45 +32,49 @@
     <!-- 뒷머리: 동글동글한 단발 -->
     <path d="M58 140 Q48 122 56 104 Q44 84 60 66 Q62 42 88 34 Q108 20 130 24 Q156 20 174 36 Q198 44 198 70 Q212 90 200 108 Q208 128 194 142 Q184 152 176 140 L80 140 Q70 152 58 140 Z" fill="#e2482a"/>
 
-    <!-- 뒤쪽 팔: 퍼프 소매와 벙어리장갑 -->
-    <ellipse cx="168" cy="182" rx="11" ry="12" fill="#f3dcc2"/>
-    <circle cx="176" cy="199" r="7.5" fill="#ff7a45"/>
+    <!-- 등 뒤 후드 -->
+    <path d="M104 166 Q100 150 116 148 L142 148 Q158 150 154 166 Z" fill="#ff6b3d"/>
+
+    <!-- 뒤쪽 팔: 소매와 손가락 없는 장갑 -->
+    <path d="M158 170 Q174 178 176 196" fill="none" stroke="#3a1712" stroke-width="15" stroke-linecap="round"/>
+    <path d="M158 170 Q174 178 176 196" fill="none" stroke="#232a40" stroke-width="10.5" stroke-linecap="round"/>
+    <circle cx="177" cy="202" r="7" fill="#2b2b33"/>
 
     <!-- 다리 -->
-    <rect x="108" y="212" width="12" height="18" fill="url(#skin)"/>
-    <rect x="138" y="212" width="12" height="18" fill="url(#skin)"/>
-    <!-- 둥근 부츠 -->
-    <path d="M100 236 Q100 226 112 226 Q125 226 125 236 L125 243 Q112 247 100 243 Z" fill="#e2482a"/>
-    <path d="M133 236 Q133 226 145 226 Q158 226 158 236 L158 243 Q145 247 133 243 Z" fill="#e2482a"/>
-    <ellipse cx="112.5" cy="227" rx="13" ry="4.5" fill="#fff4e4"/>
-    <ellipse cx="145.5" cy="227" rx="13" ry="4.5" fill="#fff4e4"/>
+    <rect x="109" y="214" width="12" height="16" fill="url(#skin)"/>
+    <rect x="138" y="214" width="12" height="16" fill="url(#skin)"/>
+    <!-- 운동화 -->
+    <path d="M100 236 Q100 228 110 228 L120 228 Q128 230 128 238 L128 243 L100 243 Z" fill="#ffffff"/>
+    <path d="M132 236 Q132 228 142 228 L152 228 Q162 230 162 238 L162 243 L132 243 Z" fill="#ffffff"/>
+    <path d="M100 240 L128 240 M132 240 L162 240" stroke="#ff6b3d" stroke-width="3"/>
+    <path d="M112 232 L120 232 M144 232 L152 232" stroke="#ff6b3d" stroke-width="2"/>
 
-    <!-- 호박바지 -->
-    <path d="M98 202 Q92 222 108 222 Q119 222 129 214 Q139 222 150 222 Q166 222 160 202 Z" fill="#ff8a4c"/>
+    <!-- 반바지 -->
+    <path d="M100 202 L158 202 L160 220 L132 220 L129 212 L126 220 L98 220 Z" fill="#2f3550"/>
+    <path d="M100 204 L98 220 M158 204 L160 220" stroke="#ff6b3d" stroke-width="2.5"/>
 
-    <!-- 몸통: 둥근 스목 -->
-    <path d="M100 168 Q112 162 129 162 Q146 162 158 168 Q170 188 168 208 Q148 216 129 214 Q110 216 90 208 Q88 188 100 168 Z" fill="#fff4e4"/>
-    <path d="M150 166 Q158 168 160 172 Q170 190 168 208 Q160 211 152 212 Q160 190 150 166 Z" fill="#f3dcc2" stroke="none"/>
-    <!-- 밑단 물결 레이스 -->
-    <path d="M90 208 Q95 214 100 209 Q105 215 110 210 Q115 215 120 211 Q125 216 130 211 Q135 216 140 211 Q145 215 150 210 Q155 215 160 209 Q165 214 168 208" fill="none" stroke="#ff6b3d" stroke-width="3"/>
-    <!-- 가슴 불꽃 무늬 -->
-    <g transform="translate(140 186) scale(0.32)" stroke-width="6">
+    <!-- 안쪽 흰 티셔츠 -->
+    <path d="M110 166 L148 166 L150 206 L108 206 Z" fill="#ffffff"/>
+    <g transform="translate(122 180) scale(0.3)" stroke-width="6">
       <path d="M4 40 C-8 24 4 14 10 4 C12 14 18 16 22 8 C26 18 36 12 38 2 C48 16 52 30 40 42 Z" fill="url(#flameOut)"/>
     </g>
 
-    <!-- 큰 리본 -->
-    <path d="M129 172 Q110 160 108 172 Q110 186 129 176 Z" fill="#ff4d3a"/>
-    <path d="M129 172 Q148 160 150 172 Q148 186 129 176 Z" fill="#ff4d3a"/>
-    <path d="M125 177 L118 192 L125 189 L128 178 Z" fill="#e2342a"/>
-    <path d="M133 177 L140 192 L133 189 L130 178 Z" fill="#e2342a"/>
-    <ellipse cx="129" cy="174" rx="5" ry="5.5" fill="#e2342a"/>
-    <path d="M114 170 Q118 168 122 171" fill="none" stroke="#ffb3a8" stroke-width="2" stroke-linecap="round"/>
+    <!-- 짧은 후드 재킷 (열린 지퍼) -->
+    <path d="M96 176 Q100 166 114 163 L120 163 L118 206 L94 204 Q92 190 96 176 Z" fill="#232a40"/>
+    <path d="M162 176 Q158 166 144 163 L138 163 L140 206 L164 204 Q166 190 162 176 Z" fill="#232a40"/>
+    <path d="M118 165 L117 204 M140 165 L141 204" stroke="#ff6b3d" stroke-width="2.5"/>
+    <path d="M150 168 Q160 174 162 186 L164 204 L154 205 Z" fill="#1a2033" stroke="none"/>
+    <!-- 벨트와 파우치 -->
+    <path d="M100 204 L158 204" stroke="#5a3a2a" stroke-width="5"/>
+    <rect x="125" y="200" width="9" height="8" rx="1.5" fill="#f4b23c" stroke-width="1.8"/>
+    <rect x="143" y="202" width="14" height="12" rx="3" fill="#7a4a2a"/>
 
-    <!-- 앞쪽 팔: 퍼프 소매와 벙어리장갑 -->
-    <ellipse cx="92" cy="182" rx="12" ry="13" fill="#fff4e4"/>
-    <path d="M82 190 Q92 197 102 190" fill="none" stroke="#ff6b3d" stroke-width="3"/>
-    <circle cx="86" cy="201" r="8.5" fill="#ff7a45"/>
-    <ellipse cx="80" cy="197" rx="3.2" ry="4" fill="#ff7a45"/>
+    <!-- 앞쪽 팔: 소매와 손가락 없는 장갑 -->
+    <path d="M102 172 Q86 182 84 198" fill="none" stroke="#3a1712" stroke-width="16" stroke-linecap="round"/>
+    <path d="M102 172 Q86 182 84 198" fill="none" stroke="#2c3550" stroke-width="11.5" stroke-linecap="round"/>
+    <path d="M78 192 L90 196" stroke="#ff6b3d" stroke-width="3"/>
+    <path d="M77 204 Q77 196 85 196 Q93 196 93 204 Q93 212 85 212 Q77 212 77 204 Z" fill="#2b2b33"/>
+    <path d="M78 199 Q85 197 92 200" fill="none" stroke="url(#skin)" stroke-width="3"/>
 
     <!-- 목 -->
     <rect x="120" y="150" width="20" height="16" fill="#f7c9a8"/>
