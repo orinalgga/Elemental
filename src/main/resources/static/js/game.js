@@ -277,6 +277,7 @@
             d.wanderAng += (Math.random() - 0.5) * 2 * dt;
             const sp = 40 * (d.slowUntil > t ? 0.4 : 1);
             d.x += Math.cos(d.wanderAng) * sp * dt; d.y += Math.sin(d.wanderAng) * sp * dt;
+            d.walk += dt * 6;
             if (Math.abs(Math.cos(d.wanderAng)) > 0.3) d.facing = Math.cos(d.wanderAng) > 0 ? 1 : -1;
             if (Math.hypot(d.x - d.hx, d.y - d.hy) > 60) d.wanderAng = Math.atan2(d.hy - d.y, d.hx - d.x);
             if (t >= d.fireAt) {
@@ -356,9 +357,9 @@
         const hurt = t - u.hurtAt < 0.25;
         if (isPlayer) {
             const blink = ((t + u.blinkSeed) % 3.2) < 0.13;
-            Sprites.drawChibi(ctx, u.x, u.y, { kind: u.spec.id, scale: 1.3, facing: u.facing, walk: u.walk, moving: u.moving, time: t, blink, hurt });
+            Sprites.drawCharacter(ctx, u.x, u.y, { kind: u.spec.id, facing: u.facing, walk: u.walk, moving: u.moving, time: t, blink, hurt });
         } else {
-            Sprites.drawScarecrow(ctx, u.x, u.y, { color: u.color, scale: 1.25, time: t, hurt, facing: u.facing });
+            Sprites.drawCharacter(ctx, u.x, u.y, { kind: 'dummy', color: u.color, time: t, hurt, facing: u.facing, moving: true, walk: u.walk });
         }
         if (u.shieldUntil > t) { ctx.strokeStyle = '#e8c27a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 7, 0, Math.PI * 2); ctx.stroke(); }
         if (u.slowUntil > t) { ctx.strokeStyle = 'rgba(120,190,255,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 4, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
@@ -428,7 +429,7 @@
         const p = state.player, y0 = H - HUD_H;
         ctx.fillStyle = '#171a22'; ctx.fillRect(0, y0, W, HUD_H);
         ctx.fillStyle = p.color + '44'; ctx.beginPath(); ctx.arc(46, y0 + 46, 30, 0, Math.PI * 2); ctx.fill();
-        Sprites.drawChibi(ctx, 46, y0 + 50, { kind: p.spec.id, scale: 1.15, time: t, hurt: t - p.hurtAt < 0.25 });
+        Sprites.drawCharacter(ctx, 46, y0 + 50, { kind: p.spec.id, size: 0.88, time: t, hurt: t - p.hurtAt < 0.25 });
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'left';
         ctx.fillText(`${p.name}`, 82, y0 + 26);
         ctx.fillStyle = '#9aa0b4'; ctx.font = '12px sans-serif';
@@ -499,7 +500,7 @@
             ctx.fillStyle = hover ? '#2a2f3d' : '#20242f'; ctx.fillRect(r.x, r.y, r.w, r.h);
             ctx.strokeStyle = hover ? c.color : '#3a4156'; ctx.lineWidth = hover ? 3 : 1.5; ctx.strokeRect(r.x, r.y, r.w, r.h);
             ctx.fillStyle = c.color + '33'; ctx.beginPath(); ctx.ellipse(r.x + r.w / 2, r.y + 116, 36, 9, 0, 0, Math.PI * 2); ctx.fill();
-            Sprites.drawChibi(ctx, r.x + r.w / 2, r.y + 86, { kind: c.id, scale: 1.9, time: t + i, moving: hover, walk: t * 10, blink: ((t + i) % 3.2) < 0.13 });
+            Sprites.drawCharacter(ctx, r.x + r.w / 2, r.y + 86, { kind: c.id, size: 1.46, time: t + i, moving: hover, walk: t * 10, blink: ((t + i) % 3.2) < 0.13 });
             ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px sans-serif';
             ctx.fillText(c.name, r.x + r.w / 2, r.y + 146);
             ctx.font = '13px sans-serif'; ctx.fillStyle = c.color;

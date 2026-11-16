@@ -260,5 +260,65 @@
         ctx.restore();
     }
 
-    window.Sprites = { drawChibi, drawScarecrow };
+    // ---------- PNG 스프라이트 시트 ----------
+    // assets/characters/manifest.json 에 등록된 캐릭터는 그림 파일로, 없으면 위의 도형 그림으로 그린다.
+    // 형식은 assets/characters/manifest.example.json 과 README 를 참고.
+    const sheets = {};
+    fetch('assets/characters/manifest.json')
+        .then(r => (r.ok ? r.json() : {}))
+        .then(manifest => {
+            for (const [kind, def] of Object.entries(manifest)) {
+                if (kind.startsWith('_')) continue;
+                const img = new Image();
+                img.onload = () => { sheets[kind] = { ...def, img }; };
+                img.onerror = () => console.warn(`[sprites] ${kind}: ${def.src} 를 불러오지 못해 기본 그림을 씁니다.`);
+                img.src = `assets/characters/${def.src}`;
+            }
+        })
+        .catch(() => { /* manifest 가 없으면 기본 그림 */ });
+
+    function pickAnim(sheet, o) {
+        const a = sheet.anims || {};
+        if (o.hurt && a.hurt) return a.hurt;
+        if (o.moving && a.walk) return a.walk;
+        return a.idle || a.walk || { row: 0, frames: 1 };
+    }
+
+    function drawSheet(ctx, sheet, x, y, o, size) {
+        const anim = pickAnim(sheet, o);
+        const fw = sheet.frameWidth, fh = sheet.frameHeight;
+        const frames = anim.frames || 1;
+        const fps = anim.fps == null ? 8 : anim.fps;
+        const frame = fps === 0 ? 0 : Math.floor((o.time || 0) * fps) % frames;
+        const col = (anim.col || 0) + frame;
+        const dh = (sheet.displayHeight || 72) * size;
+        const dw = dh * (fw / fh);
+        const feetY = y + 21 * size;                       // 그림자 위치와 맞춤
+        const anchorY = sheet.anchorY == null ? 1 : sheet.anchorY;  // 프레임 안에서 발이 닿는 높이 (0 위, 1 아래)
+        const flip = (o.facing || 1) * (sheet.facesRight === false ? -1 : 1) < 0;
+        ctx.save();
+        ctx.translate(x, feetY);
+        if (flip) ctx.scale(-1, 1);
+        ctx.imageSmoothingEnabled = sheet.pixelArt ? false : true;
+        ctx.drawImage(sheet.img, col * fw, (anim.row || 0) * fh, fw, fh, -dw / 2, -dh * anchorY, dw, dh);
+        if (o.hurt && !(sheet.anims && sheet.anims.hurt)) {
+            // 피격 프레임이 없으면 붉게 번쩍
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.globalAlpha = 0.45;
+            ctx.fillStyle = '#ff4d4d';
+            ctx.fillRect(-dw / 2, -dh * anchorY, dw, dh);
+        }
+        ctx.restore();
+    }
+
+    /** 캐릭터 그리기. o.size = 1 이 게임 화면 크기. 시트가 있으면 시트, 없으면 도형 그림. */
+    function drawCharacter(ctx, x, y, o) {
+        const size = o.size || 1;
+        const sheet = sheets[o.kind];
+        if (sheet) return drawSheet(ctx, sheet, x, y, o, size);
+        if (o.kind === 'dummy') return drawScarecrow(ctx, x, y, { ...o, scale: 1.25 * size });
+        return drawChibi(ctx, x, y, { ...o, scale: 1.3 * size });
+    }
+
+    window.Sprites = { drawCharacter, drawChibi, drawScarecrow, sheets };
 })();
