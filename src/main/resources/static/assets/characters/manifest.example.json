@@ -1,5 +1,5 @@
 {
-  "_설명": "이 파일을 manifest.json 으로 복사하고, 그림이 있는 캐릭터만 남기세요. 등록하지 않은 캐릭터는 기본 도형 그림으로 나옵니다. 키: hwarang, sua, punghu, gangdol, dummy",
+  "_설명": "이 파일을 manifest.json 으로 복사하고, 그림이 있는 캐릭터만 남기세요. 등록하지 않은 캐릭터는 기본 도형 그림으로 나옵니다. 키: hwarang, sua, punghu, gangdol, dummy-fire, dummy-water, dummy-wind, dummy-earth",
   "hwarang": {
     "src": "hwarang.png",
     "frameWidth": 64,

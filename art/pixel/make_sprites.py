@@ -98,6 +98,9 @@ def head_front(sp, look):
     sp.ellipse(12, 10.5, 9.4, 8.6, 'H')                       # 머리 전체
     sp.rect(3, 11, 5, 17, 'H'); sp.rect(18, 11, 20, 17, 'H')   # 옆머리
     sp.set(3, 18, 'H'); sp.set(20, 18, 'H')
+    if look.get('long'):                                      # 긴 머리
+        sp.rect(3, 11, 5, 22, 'H'); sp.rect(18, 11, 20, 22, 'H')
+        sp.set(4, 23, 'H'); sp.set(19, 23, 'H')
     sp.ellipse(12, 12.6, 6.9, 5.9, 'S', lambda x, y: y >= bangs_bottom(x, 8))  # 얼굴
     sp.recolor('H', 'h', lambda x, y: x >= 17 and y >= 6)      # 오른쪽 그림자
     sp.recolor('H', 'h', lambda x, y: y >= 15 and x <= 5)
@@ -117,6 +120,8 @@ def head_front(sp, look):
 def head_side(sp, look):
     sp.ellipse(11.5, 10.5, 9.2, 8.6, 'H')
     sp.rect(3, 11, 7, 17, 'H'); sp.set(4, 18, 'H'); sp.set(5, 18, 'H')   # 뒷머리
+    if look.get('long'):
+        sp.rect(4, 11, 8, 22, 'H'); sp.set(5, 23, 'H'); sp.set(6, 23, 'H')
     sp.ellipse(14, 12.6, 6.2, 5.9, 'S', lambda x, y: x >= 9 and y >= bangs_bottom(x, 8))
     sp.set(10, 13, 's'); sp.set(10, 12, 's')                   # 귀 그늘
     sp.recolor('H', 'h', lambda x, y: x <= 6 and y >= 6)
@@ -134,10 +139,12 @@ def head_side(sp, look):
 def head_back(sp, look):
     sp.ellipse(12, 10.5, 9.4, 8.6, 'H')
     sp.rect(3, 11, 20, 16, 'H')
+    end = 21 if look.get('long') else 17
+    sp.rect(3, 11, 20, end - 1, 'H')
     for x in range(3, 21):                                    # 둥근 물결 끝머리
-        for y in range(17, bangs_bottom(x, 17) + 1):
+        for y in range(end, bangs_bottom(x, end) + 1):
             sp.set(x, y, 'H')
-    sp.recolor('H', 'h', lambda x, y: x >= 18 or y >= bangs_bottom(x, 16))
+    sp.recolor('H', 'h', lambda x, y: x >= 18 or y >= bangs_bottom(x, end - 1))
     for x in (7, 11, 15):                                     # 머리카락 결
         for y in range(9, 15):
             sp.set(x + (y > 12), y, 'h')
@@ -250,11 +257,86 @@ HWARANG = {
     'accessory_back': flame_clip([(18, 6, 'F'), (19, 6, 'f'), (18, 7, 'f'), (19, 7, 'F'), (18, 5, 'F')]),
 }
 
-CHARACTERS = {'hwarang': HWARANG}
+SUA = {
+    'palette': {**BASE,
+                'H': (56, 132, 230), 'h': (32, 84, 170), 'L': (150, 205, 255),
+                'I': (40, 120, 220), 'i': (140, 220, 255), 'D': (16, 50, 120),
+                'N': (232, 240, 250), 'n': (180, 196, 222), 'F': (200, 236, 255), 'f': (60, 150, 240)},
+    'accent': 'f', 'accent2': 'f', 'long': True,
+    # 물방울 머리핀
+    'accessory_front': flame_clip([(4, 5, 'F'), (4, 6, 'f'), (5, 6, 'F'), (4, 7, 'f'), (5, 7, 'f')]),
+    'accessory_side': flame_clip([(5, 5, 'F'), (5, 6, 'f'), (6, 6, 'F'), (5, 7, 'f'), (6, 7, 'f')]),
+    'accessory_back': flame_clip([(19, 5, 'F'), (18, 6, 'F'), (19, 6, 'f'), (18, 7, 'f'), (19, 7, 'f')]),
+}
+
+PUNGHU = {
+    'palette': {**BASE,
+                'H': (64, 178, 104), 'h': (36, 120, 70), 'L': (160, 240, 180),
+                'I': (40, 160, 90), 'i': (170, 250, 190), 'D': (14, 70, 40),
+                'N': (40, 74, 64), 'n': (26, 50, 44), 'F': (200, 255, 210), 'f': (90, 220, 140)},
+    'accent': 'f', 'accent2': 'f',
+    # 나뭇잎 머리핀
+    'accessory_front': flame_clip([(4, 6, 'f'), (5, 5, 'f'), (5, 6, 'F'), (4, 7, 'F'), (6, 4, 'f')]),
+    'accessory_side': flame_clip([(5, 6, 'f'), (6, 5, 'f'), (6, 6, 'F'), (5, 7, 'F'), (7, 4, 'f')]),
+    'accessory_back': flame_clip([(19, 6, 'f'), (18, 5, 'f'), (18, 6, 'F'), (19, 7, 'F'), (17, 4, 'f')]),
+}
+
+GANGDOL = {
+    'palette': {**BASE,
+                'H': (140, 90, 52), 'h': (96, 58, 30), 'L': (206, 156, 110),
+                'I': (170, 110, 40), 'i': (240, 200, 110), 'D': (70, 40, 14),
+                'N': (72, 74, 88), 'n': (50, 52, 64), 'F': (200, 200, 210), 'f': (130, 130, 145)},
+    'accent': 'Y', 'accent2': 'f',
+    # 돌멩이 머리핀
+    'accessory_front': flame_clip([(4, 6, 'F'), (5, 6, 'F'), (4, 7, 'f'), (5, 7, 'f'), (6, 7, 'f')]),
+    'accessory_side': flame_clip([(5, 6, 'F'), (6, 6, 'F'), (5, 7, 'f'), (6, 7, 'f'), (7, 7, 'f')]),
+    'accessory_back': flame_clip([(18, 6, 'F'), (19, 6, 'F'), (17, 7, 'f'), (18, 7, 'f'), (19, 7, 'f')]),
+}
+
+CHARACTERS = {'hwarang': HWARANG, 'sua': SUA, 'punghu': PUNGHU, 'gangdol': GANGDOL}
+
+
+# ---------------- 허수아비 ----------------
+def scarecrow(hat, hat_dark, hurt=False):
+    sp = Sprite()
+    pal = {**BASE, 'T': hat, 't': hat_dark, 'K': (236, 212, 160), 'k': (204, 170, 110),
+           'R': (160, 112, 63), 'r': (120, 80, 44), 'A': (230, 196, 122)}
+    sp.rect(11, 22, 12, 29, 'R')                               # 막대
+    sp.rect(3, 18, 20, 19, 'R'); sp.rect(3, 19, 20, 19, 'r')   # 팔
+    sp.set(2, 18, 'A'); sp.set(21, 18, 'A'); sp.set(2, 19, 'A'); sp.set(21, 19, 'A')
+    sp.ellipse(12, 21, 5.5, 4.5, 'k')                          # 자루 몸통
+    sp.rect(11, 18, 12, 24, 'k'); sp.set(12, 20, 'r'); sp.set(12, 22, 'r')
+    sp.ellipse(12, 13.5, 6.5, 5.6, 'K')                         # 자루 머리
+    sp.recolor('K', 'k', lambda x, y: x >= 16)
+    if hurt:
+        for ex in (9, 14):
+            sp.set(ex, 12, 'E'); sp.set(ex + 1, 13, 'E'); sp.set(ex + 1, 12, 'E'); sp.set(ex, 13, 'E')
+    else:
+        sp.rect(9, 12, 10, 13, 'E'); sp.rect(14, 12, 15, 13, 'E')
+    for x in range(9, 16):
+        sp.set(x, 16, 'E' if x % 2 else 'r')                     # 꿰맨 입
+    sp.rect(5, 8, 18, 9, 'T'); sp.rect(5, 9, 18, 9, 't')       # 모자 챙
+    sp.rect(9, 5, 15, 7, 'T'); sp.rect(10, 3, 14, 4, 'T'); sp.rect(11, 1, 13, 2, 'T'); sp.set(13, 0, 'T')
+    sp.rect(14, 5, 15, 7, 't')
+    sp.outline()
+    return sp.image(pal)
+
+
+DUMMIES = {
+    'FIRE': ((255, 107, 61), (200, 64, 30)), 'WATER': ((61, 165, 255), (30, 110, 200)),
+    'WIND': ((95, 211, 141), (50, 150, 90)), 'EARTH': ((200, 149, 74), (140, 98, 40)),
+}
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     for name, look in CHARACTERS.items():
         path = os.path.join(OUT, f'{name}.png')
         make_sheet(look).save(path)
+        print('saved', os.path.normpath(path))
+    for el, (hat, dark) in DUMMIES.items():
+        sheet = Image.new('RGBA', (W * 2, H), (0, 0, 0, 0))   # 칸 0 보통, 칸 1 맞음
+        sheet.paste(scarecrow(hat, dark), (0, 0))
+        sheet.paste(scarecrow(hat, dark, hurt=True), (W, 0))
+        path = os.path.join(OUT, f'dummy-{el.lower()}.png')
+        sheet.save(path)
         print('saved', os.path.normpath(path))

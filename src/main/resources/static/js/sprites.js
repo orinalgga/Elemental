@@ -322,7 +322,7 @@
         const size = o.size || 1;
         const sheet = sheets[o.kind];
         if (sheet) return drawSheet(ctx, sheet, x, y, o, size);
-        if (o.kind === 'dummy') return drawScarecrow(ctx, x, y, { ...o, scale: 1.25 * size });
+        if (o.kind.startsWith('dummy')) return drawScarecrow(ctx, x, y, { ...o, scale: 1.25 * size });
         return drawChibi(ctx, x, y, { ...o, scale: 1.3 * size });
     }
 

@@ -360,7 +360,7 @@
             const blink = ((t + u.blinkSeed) % 3.2) < 0.13;
             Sprites.drawCharacter(ctx, u.x, u.y, { kind: u.spec.id, facing: u.facing, dir: u.dir, walk: u.walk, moving: u.moving, time: t, blink, hurt });
         } else {
-            Sprites.drawCharacter(ctx, u.x, u.y, { kind: 'dummy', color: u.color, time: t, hurt, facing: u.facing, moving: true, walk: u.walk });
+            Sprites.drawCharacter(ctx, u.x, u.y, { kind: `dummy-${u.element.toLowerCase()}`, color: u.color, time: t, hurt, facing: u.facing, moving: true, walk: u.walk });
         }
         if (u.shieldUntil > t) { ctx.strokeStyle = '#e8c27a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 7, 0, Math.PI * 2); ctx.stroke(); }
         if (u.slowUntil > t) { ctx.strokeStyle = 'rgba(120,190,255,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 4, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
@@ -369,7 +369,7 @@
         ctx.textAlign = 'center';
         ctx.font = '12px sans-serif';
         ctx.fillStyle = '#d6d9e4';
-        ctx.fillText(u.name, u.x, u.y - (isPlayer ? 58 : 64));
+        ctx.fillText(u.name, u.x, u.y - 50);
         const bw = 44;
         ctx.fillStyle = '#11131a'; ctx.fillRect(u.x - bw / 2, u.y + 30, bw, 5);
         ctx.fillStyle = u.hp / u.maxHp > 0.35 ? '#6fdc7a' : '#ff5d5d';
