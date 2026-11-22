@@ -1,0 +1,7 @@
+# 장기 앱 저장소의 deploy/Caddyfile 끝에 붙이는 블록. 웹소켓(/ws)도 그대로 넘어간다.
+# 장기 앱 docker-compose.yml의 caddy environment에도 ELEMENTAL_HOST: ${ELEMENTAL_HOST:-game.localhost} 를 더하고,
+# ~/janggigame/.env에 ELEMENTAL_HOST=game.<공인 IP>.sslip.io 를 넣는다.
+{$ELEMENTAL_HOST} {
+	encode gzip
+	reverse_proxy elemental-server:8080
+}

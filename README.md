@@ -41,17 +41,12 @@ WASD 이동 · 마우스 조준 · 좌클릭 기본 공격 · Q / E 스킬 · R 
 
 ## 인터넷에 올리기
 
-Docker 가 되는 호스팅(Render, Railway, Fly.io, 직접 서버 등)이면 이 저장소를 그대로 연결하면 돼요. `Dockerfile` 이 빌드와 실행을 다 합니다.
+장기 앱과 같은 Oracle VM에 함께 올립니다. 방법은 [docs/deploy.md](docs/deploy.md) 에 있어요.
 
-```bash
-docker build -t element-brawl .
-docker run -p 8080:8080 -v brawl-data:/data element-brawl
-```
-
-- 포트: 호스팅이 `PORT` 환경변수를 주면 그 포트를 써요 (없으면 8080).
-- 전적 DB: `/data` 에 저장돼요. 재배포해도 남기려면 호스팅에서 영구 디스크(볼륨)를 `/data` 에 붙이세요.
-- WebSocket 을 쓰니 호스팅에서 WebSocket 을 허용해야 해요 (위 서비스들은 기본 허용). https 주소면 자동으로 wss 로 연결돼요.
-- 서버 한 대 기준이에요. 방 상태가 메모리에 있어서 여러 대로 늘리려면 같은 방 사람을 같은 서버로 보내는 설정이 필요해요.
+- `main`에 머지되면 GitHub Actions가 서버 이미지(`ghcr.io/orinalgga/elemental-server`)를 만들어요.
+- VM에서는 `deploy/setup-on-janggi-vm.sh` 한 번이면 서버가 뜨고, 5분마다 자동으로 새 버전을 받아요.
+- HTTPS는 장기 앱의 caddy가 `game.<공인 IP>.sslip.io` 로 붙여 줘요.
+- 내 PC에서 도커로 띄워 보기: `docker compose up --build` → http://localhost:8082
 
 ## 캐릭터 그림(스프라이트 시트) 넣기
 
