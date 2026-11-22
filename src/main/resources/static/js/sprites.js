@@ -284,6 +284,19 @@
         return a.idle || a.walk || { row: 0, frames: 1 };
     }
 
+    function tinted(sheet) {
+        if (sheet.hurtImg) return sheet.hurtImg;
+        const c = document.createElement('canvas');
+        c.width = sheet.img.width; c.height = sheet.img.height;
+        const g = c.getContext('2d');
+        g.drawImage(sheet.img, 0, 0);
+        g.globalCompositeOperation = 'source-atop';
+        g.fillStyle = 'rgba(255,90,90,0.55)';
+        g.fillRect(0, 0, c.width, c.height);
+        sheet.hurtImg = c;
+        return c;
+    }
+
     function drawSheet(ctx, sheet, x, y, o, size) {
         const anim = pickAnim(sheet, o);
         const fw = sheet.frameWidth, fh = sheet.frameHeight;
@@ -306,14 +319,9 @@
         ctx.translate(x, feetY);
         if (flip) ctx.scale(-1, 1);
         ctx.imageSmoothingEnabled = sheet.pixelArt ? false : true;
-        ctx.drawImage(sheet.img, col * fw, row * fh, fw, fh, -dw / 2, -dh * anchorY, dw, dh);
-        if (o.hurt && !(sheet.anims && sheet.anims.hurt)) {
-            // 피격 프레임이 없으면 붉게 번쩍
-            ctx.globalCompositeOperation = 'source-atop';
-            ctx.globalAlpha = 0.45;
-            ctx.fillStyle = '#ff4d4d';
-            ctx.fillRect(-dw / 2, -dh * anchorY, dw, dh);
-        }
+        // 피격 프레임이 없으면 붉게 물들인 시트를 씀 (그림 픽셀만 물들도록 따로 만들어 둠)
+        const img = o.hurt && !(sheet.anims && sheet.anims.hurt) ? tinted(sheet) : sheet.img;
+        ctx.drawImage(img, col * fw, row * fh, fw, fh, -dw / 2, -dh * anchorY, dw, dh);
         ctx.restore();
     }
 

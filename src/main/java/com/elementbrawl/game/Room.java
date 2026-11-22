@@ -1,127 +1,168 @@
 package com.elementbrawl.game;
 
+import com.elementbrawl.character.CharacterController;
+import com.elementbrawl.character.CharacterSpec;
 import com.elementbrawl.character.Element;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
  * 게임 룸 하나. 모든 판정을 여기서 한다 (서버 권한).
- * 혼자면 허수아비 연습(practice), 2명 이상이면 마지막 생존자가 이기는 개인전(playing → ended)을 반복한다.
+ * 사람이 적으면 봇으로 3명을 채우고, 마지막 생존자가 이기는 개인전(playing → ended)을 반복한다.
+ * 40초가 지나면 안전 구역이 줄어들기 시작한다.
  * 모든 메서드는 RoomManager 가 이 객체로 동기화한 상태에서 부른다.
  */
 public class Room {
     public static final int MAX_PLAYERS = 4;
-    public static final double AX = 20, AY = 20, AW = 920, AH = 536;
+    public static final double AX = Arena.AX, AY = Arena.AY, AW = Arena.AW, AH = Arena.AH;
+    static final int MIN_FIGHTERS = 3;
     static final double ROUND_END_DELAY = 5;
-    static final double PRACTICE_RESPAWN = 3;
+    static final double ZONE_START = 40, ZONE_TIME = 40, ZONE_R0 = 560, ZONE_R1 = 110, ZONE_DPS = 12;
+    static final double ITEM_FIRST = 3, ITEM_EVERY = 7;
+    static final int ITEM_MAX = 3;
 
     static final Map<Element, String> COLOR = Map.of(
             Element.FIRE, "#ff6b3d", Element.WATER, "#3da5ff", Element.WIND, "#5fd38d", Element.EARTH, "#c8954a");
-    static final double[][] SPAWNS = {{0.12, 0.2}, {0.88, 0.8}, {0.88, 0.2}, {0.12, 0.8}};
+    static final String[] BOT_NAMES = {"봇 불씨", "봇 이슬", "봇 돌풍", "봇 자갈", "봇 번개", "봇 단비", "봇 모래", "봇 노을"};
 
     public final String code;
     public final Map<String, Player> players = new LinkedHashMap<>();
-    final List<Dummy> dummies = new ArrayList<>();
     final List<Projectile> projectiles = new ArrayList<>();
     final List<Area> areas = new ArrayList<>();
     final List<Blink> blinks = new ArrayList<>();
+    final List<Item> items = new ArrayList<>();
     final List<Map<String, Object>> events = new ArrayList<>();
-    String phase = "practice";
+    /** 사람 2명 이상이 함께한 판의 결과. RoomManager 가 가져가서 전적에 기록한다. */
+    final List<Result> results = new ArrayList<>();
+    final Random rnd;
+    String phase = "waiting";
     String winner;
-    double endsAt;
+    String winnerId;
+    double endsAt, roundStart, nextItemAt;
     double t;
-    private int nextId;
+    boolean zoneWarned;
+    boolean ranked;
+    private int nextId, botSeq;
 
     public Room(String code) {
+        this(code, new Random());
+    }
+
+    Room(String code, Random rnd) {
         this.code = code;
+        this.rnd = rnd;
     }
 
     // ------------------------------------------------------------ 입장과 퇴장
 
+    public long humans() {
+        return players.values().stream().filter(p -> !p.bot()).count();
+    }
+
     public boolean isFull() {
-        return players.size() >= MAX_PLAYERS;
+        return humans() >= MAX_PLAYERS;
     }
 
     public void join(Player p) {
+        long before = humans();
         players.put(p.id, p);
-        if ("playing".equals(phase) || "ended".equals(phase)) {
-            // 진행 중인 판은 그대로 두고, 다음 판까지 관전
-            p.reset();
-            p.hp = 0;
-            p.x = AX + AW / 2;
-            p.y = AY + AH / 2;
-            event("banner", Map.of("text", p.name + " 입장 (다음 판부터)"));
-        } else if (players.size() >= 2) {
+        if ("waiting".equals(phase) || before <= 1 && "playing".equals(phase)) {
+            // 첫 입장이거나, 봇하고만 싸우던 판이면 바로 새 판
+            if (before == 1) event("banner", Map.of("text", "새 도전자 " + p.name + " 입장!"));
             startRound();
         } else {
-            startPractice();
+            // 사람끼리 싸우는 판은 그대로 두고 다음 판까지 관전
+            p.reset();
+            p.hp = 0;
+            p.x = Arena.CX;
+            p.y = Arena.CY;
+            event("banner", Map.of("text", p.name + " 입장 (다음 판부터)"));
         }
     }
 
     public void leave(String id) {
-        players.remove(id);
-        if (players.size() < 2 && !"practice".equals(phase)) {
-            startPractice();
-        }
+        Player p = players.remove(id);
+        if (p != null && humans() > 0) event("banner", Map.of("text", p.name + " 나감"));
     }
 
-    void startPractice() {
-        phase = "practice";
-        winner = null;
-        projectiles.clear();
-        areas.clear();
-        blinks.clear();
-        dummies.clear();
-        double[][] homes = {{0.55, 0.25}, {0.82, 0.3}, {0.6, 0.72}, {0.85, 0.75}};
-        Element[] els = Element.values();
-        for (int i = 0; i < els.length; i++) {
-            Dummy d = new Dummy("d" + i, els[i], AX + AW * homes[i][0], AY + AH * homes[i][1]);
-            d.fireAt = t + 1.5 + i * 0.6;
-            dummies.add(d);
-        }
-        int i = 0;
+    /** 사람 수에 맞춰 봇을 넣고 뺀다. 판이 시작할 때만 부른다. */
+    void fillBots() {
+        long humans = humans();
+        long want = humans == 0 ? 0 : Math.min(MAX_PLAYERS, Math.max(MIN_FIGHTERS, humans)) - humans;
+        List<Player> bots = players.values().stream().filter(Player::bot).toList();
+        for (int i = (int) want; i < bots.size(); i++) players.remove(bots.get(i).id);
+        Set<String> used = new HashSet<>();
+        Set<String> names = new HashSet<>();
         for (Player p : players.values()) {
-            p.reset();
-            p.x = AX + 140;
-            p.y = AY + AH / 2 + i++ * 40;
+            used.add(p.spec.id());
+            names.add(p.name);
+        }
+        for (long n = players.values().stream().filter(Player::bot).count(); n < want; n++) {
+            List<CharacterSpec> pool = new ArrayList<>(CharacterController.CHARACTERS.stream()
+                    .filter(c -> !used.contains(c.id())).toList());
+            if (pool.isEmpty()) pool = new ArrayList<>(CharacterController.CHARACTERS);
+            CharacterSpec spec = pool.get(rnd.nextInt(pool.size()));
+            used.add(spec.id());
+            String name;
+            do {
+                name = BOT_NAMES[rnd.nextInt(BOT_NAMES.length)];
+            } while (names.contains(name));
+            names.add(name);
+            Player bot = new Player("bot" + (++botSeq), name, spec);
+            bot.brain = new Bots.Brain(rnd);
+            players.put(bot.id, bot);
         }
     }
 
     void startRound() {
+        fillBots();
         phase = "playing";
         winner = null;
+        winnerId = null;
+        roundStart = t;
+        nextItemAt = t + ITEM_FIRST;
+        zoneWarned = false;
         projectiles.clear();
         areas.clear();
         blinks.clear();
-        dummies.clear();
+        items.clear();
+        ranked = humans() >= 2;
+        List<Player> order = new ArrayList<>(players.values());
+        Collections.shuffle(order, rnd);
         int i = 0;
-        for (Player p : players.values()) {
+        for (Player p : order) {
             p.reset();
-            double[] s = SPAWNS[i++ % SPAWNS.length];
+            double[] s = Arena.SPAWNS[i++ % Arena.SPAWNS.length];
             p.x = AX + AW * s[0];
             p.y = AY + AH * s[1];
+            p.aim = Math.atan2(Arena.CY - p.y, Arena.CX - p.x);
+            p.inRound = true;
         }
         event("banner", Map.of("text", "대전 시작!"));
+        event("sfx", Map.of("s", "start"));
     }
 
     // ------------------------------------------------------------ 입력
 
     public void input(String id, Map<String, Object> msg) {
         Player p = players.get(id);
-        if (p == null) return;
+        if (p == null || p.bot()) return;
         p.up = Boolean.TRUE.equals(msg.get("up"));
         p.down = Boolean.TRUE.equals(msg.get("down"));
         p.left = Boolean.TRUE.equals(msg.get("left"));
         p.right = Boolean.TRUE.equals(msg.get("right"));
         p.fire = Boolean.TRUE.equals(msg.get("fire"));
-        if (msg.get("aim") instanceof Number n) p.aim = n.doubleValue();
-        if (msg.get("dist") instanceof Number n) p.aimDist = Math.max(0, n.doubleValue());
+        if (msg.get("aim") instanceof Number n && Double.isFinite(n.doubleValue())) p.aim = n.doubleValue();
+        if (msg.get("dist") instanceof Number n && Double.isFinite(n.doubleValue())) p.aimDist = Math.max(0, n.doubleValue());
         if (msg.get("cast") instanceof String c && Set.of("q", "e", "r").contains(c)) p.casts.add(c);
     }
 
@@ -129,25 +170,27 @@ public class Room {
 
     public void tick(double dt) {
         t += dt;
+        if ("playing".equals(phase)) {
+            for (Player p : players.values()) if (p.bot() && p.alive()) Bots.think(this, p, dt);
+        }
         for (Player p : players.values()) updatePlayer(p, dt);
         updateBlinks();
-        updateDummies(dt);
         updateProjectiles(dt);
         updateAreas();
+        if ("playing".equals(phase)) {
+            updateItems();
+            updateZone(dt);
+        }
         updatePhase();
     }
 
     private void updatePlayer(Player p, double dt) {
+        p.vx = p.vy = 0;
         if (!p.alive()) {
-            if ("practice".equals(phase) && p.respawnAt > 0 && t >= p.respawnAt) {
-                p.reset();
-                p.x = AX + 140;
-                p.y = AY + AH / 2;
-                ring(p.x, p.y, 30, COLOR.get(p.element));
-            }
             p.casts.clear();
             return;
         }
+        double ox = p.x, oy = p.y;
         double c = Math.cos(p.aim), s = Math.sin(p.aim);
         p.facing = c >= 0 ? 1 : -1;
         p.dir = s > 0.6 ? "down" : s < -0.6 ? "up" : "side";
@@ -168,16 +211,19 @@ public class Room {
             double my = (p.down ? 1 : 0) - (p.up ? 1 : 0);
             double len = Math.hypot(mx, my);
             if (len > 0) {
-                double sp = p.spec.moveSpeed() * (p.slowUntil > t ? 0.6 : 1);
+                double sp = p.spec.moveSpeed() * (p.slowUntil > t ? 0.6 : 1) * (p.hasteUntil > t ? 1.35 : 1);
                 p.x += mx / len * sp * dt;
                 p.y += my / len * sp * dt;
                 p.moving = true;
             }
         }
-        p.x = clamp(p.x, AX + p.r, AX + AW - p.r);
-        p.y = clamp(p.y, AY + p.r, AY + AH - p.r);
+        Arena.pushOut(p);
+        if (dt > 0) {
+            p.vx = (p.x - ox) / dt;
+            p.vy = (p.y - oy) / dt;
+        }
 
-        if (!"ended".equals(phase)) {
+        if ("playing".equals(phase)) {
             if (p.fire) Skills.use(this, p, "atk");
             for (String cast : p.casts) Skills.use(this, p, cast);
         }
@@ -195,40 +241,9 @@ public class Room {
             double a = Math.atan2(b.owner.y - b.target.y, b.owner.x - b.target.x);
             b.owner.x = b.target.x + Math.cos(a) * (b.target.r + b.owner.r + 4);
             b.owner.y = b.target.y + Math.sin(a) * (b.target.r + b.owner.r + 4);
+            Arena.pushOut(b.owner);
             slash(b.target.x, b.target.y, 40, a + Math.PI, Math.PI * 2, COLOR.get(b.owner.element));
             damage(b.target, 20, b.owner.element, b.owner);
-        }
-    }
-
-    private void updateDummies(double dt) {
-        for (Dummy d : dummies) {
-            if (!d.alive()) {
-                if (t >= d.respawnAt) {
-                    d.hp = d.maxHp;
-                    d.x = d.hx;
-                    d.y = d.hy;
-                    d.fireAt = t + 1.5;
-                    ring(d.x, d.y, 30, COLOR.get(d.element));
-                }
-                continue;
-            }
-            if (d.stunUntil > t) continue;
-            d.wanderAng += (Math.random() - 0.5) * 2 * dt;
-            double sp = 40 * (d.slowUntil > t ? 0.4 : 1);
-            d.x += Math.cos(d.wanderAng) * sp * dt;
-            d.y += Math.sin(d.wanderAng) * sp * dt;
-            if (Math.abs(Math.cos(d.wanderAng)) > 0.3) d.facing = Math.cos(d.wanderAng) > 0 ? 1 : -1;
-            if (Math.hypot(d.x - d.hx, d.y - d.hy) > 60) d.wanderAng = Math.atan2(d.hy - d.y, d.hx - d.x);
-            if (t >= d.fireAt) {
-                d.fireAt = t + 2.5 * (d.slowUntil > t ? 1.6 : 1);
-                Player near = null;
-                for (Player p : players.values()) {
-                    if (p.alive() && d.dist(p) < 460 && (near == null || d.dist(p) < d.dist(near))) near = p;
-                }
-                if (near != null) {
-                    shoot(d, Math.atan2(near.y - d.y, near.x - d.x), 230, 6, 8, 2.2, false, 0);
-                }
-            }
         }
     }
 
@@ -239,6 +254,12 @@ public class Room {
             b.x += b.vx * dt;
             b.y += b.vy * dt;
             if (t - b.born > b.life || b.x < AX || b.x > AX + AW || b.y < AY || b.y > AY + AH) {
+                it.remove();
+                continue;
+            }
+            if (Arena.insideRock(b.x, b.y, b.r * 0.5)) {
+                ring(b.x, b.y, 14, COLOR.get(b.element));
+                event("rock", Map.of("x", round(b.x), "y", round(b.y)));
                 it.remove();
                 continue;
             }
@@ -274,43 +295,129 @@ public class Room {
                 }
             }
             ring(a.x, a.y, a.r, COLOR.get(a.element));
+            event("boom", Map.of("x", round(a.x), "y", round(a.y), "r", a.r, "color", COLOR.get(a.element)));
+        }
+    }
+
+    private void updateItems() {
+        for (Iterator<Item> it = items.iterator(); it.hasNext(); ) {
+            Item item = it.next();
+            for (Player p : players.values()) {
+                if (p.alive() && p.dist(item.x, item.y) < p.r + 16) {
+                    item.apply(this, p);
+                    it.remove();
+                    break;
+                }
+            }
+        }
+        if (t >= nextItemAt) {
+            nextItemAt = t + ITEM_EVERY;
+            if (items.size() < ITEM_MAX) spawnItem();
+        }
+    }
+
+    void spawnItem() {
+        double zr = zoneRadius();
+        for (int tries = 0; tries < 40; tries++) {
+            double x = AX + 50 + rnd.nextDouble() * (AW - 100);
+            double y = AY + 50 + rnd.nextDouble() * (AH - 100);
+            if (Arena.insideRock(x, y, 30)) continue;
+            if (Math.hypot(x - Arena.CX, y - Arena.CY) > zr - 40) continue;
+            boolean near = false;
+            for (Player p : players.values()) if (p.alive() && p.dist(x, y) < 90) near = true;
+            for (Item o : items) if (Math.hypot(o.x - x, o.y - y) < 120) near = true;
+            if (near) continue;
+            Item.Kind[] kinds = Item.Kind.values();
+            // 회복이 조금 더 자주 나옴
+            Item.Kind kind = rnd.nextDouble() < 0.25 ? Item.Kind.HEAL : kinds[rnd.nextInt(kinds.length)];
+            items.add(new Item(++nextId, kind, x, y, t));
+            ring(x, y, 24, kind.color);
+            return;
+        }
+    }
+
+    double zoneRadius() {
+        if (!"playing".equals(phase) && !"ended".equals(phase)) return ZONE_R0;
+        double k = (t - roundStart - ZONE_START) / ZONE_TIME;
+        if (k <= 0) return ZONE_R0;
+        return ZONE_R0 + (ZONE_R1 - ZONE_R0) * Math.min(1, k);
+    }
+
+    private void updateZone(double dt) {
+        double r = zoneRadius();
+        if (r >= ZONE_R0) {
+            if (!zoneWarned && t - roundStart > ZONE_START - 5) {
+                zoneWarned = true;
+                event("banner", Map.of("text", "5초 뒤 안전 구역이 좁아져요!"));
+            }
+            return;
+        }
+        for (Player p : players.values()) {
+            if (!p.alive() || p.dist(Arena.CX, Arena.CY) <= r) continue;
+            p.zoneAcc += ZONE_DPS * dt;
+            if (p.zoneAcc >= 3) {
+                int d = (int) p.zoneAcc;
+                p.zoneAcc -= d;
+                p.hp = Math.max(0, p.hp - d);
+                p.hurtAt = t;
+                event("float", Map.of("x", round(p.x), "y", round(p.y - p.r - 6), "text", String.valueOf(d),
+                        "color", "#c06bff", "big", false, "to", p.id, "dmg", d));
+                if (!p.alive()) died(p, null);
+            }
         }
     }
 
     private void updatePhase() {
         if ("playing".equals(phase)) {
             List<Player> alive = players.values().stream().filter(Unit::alive).toList();
-            if (alive.size() <= 1) {
-                phase = "ended";
-                endsAt = t + ROUND_END_DELAY;
-                if (alive.size() == 1) {
-                    Player w = alive.get(0);
-                    w.wins++;
-                    winner = w.name;
-                } else {
-                    winner = null;
-                }
-                event("banner", Map.of("text", winner == null ? "무승부" : winner + " 승리!"));
+            boolean humanAlive = alive.stream().anyMatch(p -> !p.bot());
+            if (alive.size() <= 1 || !humanAlive) {
+                Player w = alive.stream().max(Comparator.comparingDouble(p -> p.hp)).orElse(null);
+                endRound(w);
             }
         } else if ("ended".equals(phase) && t >= endsAt) {
-            if (players.size() >= 2) startRound(); else startPractice();
+            if (humans() > 0) startRound(); else phase = "waiting";
         }
+    }
+
+    private void endRound(Player w) {
+        phase = "ended";
+        endsAt = t + ROUND_END_DELAY;
+        projectiles.clear();
+        areas.clear();
+        blinks.clear();
+        if (w != null) {
+            w.wins++;
+            winner = w.name;
+            winnerId = w.id;
+        } else {
+            winner = null;
+        }
+        event("banner", Map.of("text", winner == null ? "무승부" : winner + " 승리!"));
+        event("sfx", Map.of("s", "end"));
+        if (ranked) {
+            for (Player p : players.values()) {
+                if (p.bot() || !p.inRound || p.accountId == null) continue;
+                results.add(new Result(p.accountId, p == w, p.roundKills, !p.alive()));
+            }
+        }
+        for (Player p : players.values()) p.inRound = false;
     }
 
     // ------------------------------------------------------------ 전투 도구 (Skills 가 씀)
 
-    /** owner 가 때릴 수 있는 것: 살아 있는 다른 플레이어와 허수아비. 허수아비가 쏜 것은 플레이어만. */
+    /** owner 가 때릴 수 있는 것: 살아 있는 다른 플레이어. */
     List<Unit> targetsOf(Unit owner) {
         List<Unit> list = new ArrayList<>();
         for (Player p : players.values()) if (p != owner && p.alive()) list.add(p);
-        if (owner instanceof Player) for (Dummy d : dummies) if (d.alive()) list.add(d);
         return list;
     }
 
     void damage(Unit target, double amount, Element element, Unit source) {
-        if (!target.alive() || "ended".equals(phase)) return;
+        if (!target.alive() || !"playing".equals(phase)) return;
         double mult = element.multiplierAgainst(target.element);
         double dmg = amount * mult;
+        if (source instanceof Player sp && sp.powerUntil > t) dmg *= 1.3;
         if (target.shieldUntil > t) dmg *= 0.5;
         int d = (int) Math.max(1, Math.round(dmg));
         target.hp = Math.max(0, target.hp - d);
@@ -323,17 +430,30 @@ public class Room {
         e.put("text", mult > 1 ? d + " 상성!" : String.valueOf(d));
         e.put("color", mult > 1 ? "#ffd84a" : mult < 1 ? "#8a8fa3" : "#ffffff");
         e.put("big", mult > 1);
+        e.put("to", target.id);
+        e.put("from", source == null ? "" : source.id);
+        e.put("dmg", d);
         event("float", e);
-        if (!target.alive()) {
-            ring(target.x, target.y, 40, COLOR.get(target.element));
-            if (source instanceof Player sp) sp.kills++;
-            if (target instanceof Dummy dm) dm.respawnAt = t + 3;
-            if (target instanceof Player tp) {
-                tp.dash = null;
-                if ("practice".equals(phase)) tp.respawnAt = t + PRACTICE_RESPAWN;
-                event("banner", Map.of("text", tp.name + " 쓰러짐"));
-            }
+        if (!target.alive() && target instanceof Player tp) died(tp, source instanceof Player sp ? sp : null);
+    }
+
+    private void died(Player tp, Player killer) {
+        ring(tp.x, tp.y, 40, COLOR.get(tp.element));
+        tp.dash = null;
+        if (killer != null) {
+            killer.kills++;
+            killer.roundKills++;
         }
+        Map<String, Object> k = new LinkedHashMap<>();
+        k.put("x", round(tp.x));
+        k.put("y", round(tp.y));
+        k.put("id", tp.id);
+        k.put("victim", tp.name);
+        k.put("vColor", COLOR.get(tp.element));
+        k.put("killerId", killer == null ? "" : killer.id);
+        k.put("killer", killer == null ? "안전 구역" : killer.name);
+        k.put("kColor", killer == null ? "#c06bff" : COLOR.get(killer.element));
+        event("kill", k);
     }
 
     void heal(Player p, double amount) {
@@ -360,6 +480,7 @@ public class Room {
         b.slow = slow;
         b.born = t;
         projectiles.add(b);
+        event("sfx", Map.of("s", "shot", "who", from.id));
     }
 
     Area area(Player owner, double x, double y, double r, double delay, double dmg) {
@@ -384,6 +505,7 @@ public class Room {
             if (p.dist(u) <= range + u.r && diff <= arc / 2) damage(u, dmg, p.element, p);
         }
         slash(p.x, p.y, range, p.aim, arc, COLOR.get(p.element));
+        event("sfx", Map.of("s", "swing", "who", p.id));
     }
 
     void ring(double x, double y, double r, String color) {
@@ -410,12 +532,20 @@ public class Room {
         s.put("room", code);
         s.put("phase", phase);
         s.put("winner", winner);
+        s.put("winnerId", winnerId);
         s.put("endsIn", "ended".equals(phase) ? Math.max(0, Math.ceil(endsAt - t)) : 0);
+        s.put("roundTime", "playing".equals(phase) ? round(t - roundStart) : 0);
+        s.put("ranked", ranked);
+        double zr = zoneRadius();
+        s.put("zone", zr < ZONE_R0 ? Map.of("x", Arena.CX, "y", Arena.CY, "r", round(zr)) : null);
+        s.put("zoneIn", "playing".equals(phase) ? round(Math.max(0, ZONE_START - (t - roundStart))) : 0);
         List<Map<String, Object>> ps = new ArrayList<>();
         for (Player p : players.values()) {
             Map<String, Object> m = unit(p);
             m.put("name", p.name);
             m.put("ch", p.spec.id());
+            m.put("bot", p.bot());
+            m.put("acct", p.accountId != null);
             m.put("mp", round(p.mp));
             m.put("maxMp", p.maxMp);
             m.put("ult", round(p.ult));
@@ -424,17 +554,18 @@ public class Room {
             m.put("moving", p.moving);
             m.put("kills", p.kills);
             m.put("wins", p.wins);
-            m.put("respawnIn", p.respawnAt > 0 ? round(Math.max(0, p.respawnAt - t)) : 0);
+            m.put("haste", round(Math.max(0, p.hasteUntil - t)));
+            m.put("power", round(Math.max(0, p.powerUntil - t)));
             m.put("readyAtk", round(Math.max(0, p.readyAtk - t)));
             m.put("readyQ", round(Math.max(0, p.readyQ - t)));
             m.put("readyE", round(Math.max(0, p.readyE - t)));
             ps.add(m);
         }
         s.put("players", ps);
-        s.put("dummies", dummies.stream().filter(Unit::alive).map(this::unit).toList());
+        s.put("items", items.stream().map(Item::json).toList());
         s.put("projectiles", projectiles.stream().map(b -> Map.of(
-                "id", b.id, "x", round(b.x), "y", round(b.y), "r", b.r,
-                "color", COLOR.get(b.element), "enemy", !(b.owner instanceof Player))).toList());
+                "id", b.id, "x", round(b.x), "y", round(b.y), "r", b.r, "vx", round(b.vx), "vy", round(b.vy),
+                "color", COLOR.get(b.element), "owner", b.owner.id)).toList());
         s.put("areas", areas.stream().map(a -> Map.of(
                 "id", a.id, "x", round(a.x), "y", round(a.y), "r", a.r,
                 "k", a.delay > 0 ? round(Math.min(1, (t - a.born) / a.delay)) : 1, "color", COLOR.get(a.element))).toList());
@@ -488,5 +619,9 @@ public class Room {
     }
 
     record Blink(double at, Player owner, Unit target) {
+    }
+
+    /** 한 판의 개인 결과 (로그인한 사람만). */
+    public record Result(long accountId, boolean win, int kills, boolean died) {
     }
 }

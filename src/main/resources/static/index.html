@@ -4,52 +4,129 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>원소 난투</title>
+    <meta name="description" content="불, 물, 바람, 땅. 원소 상성으로 싸우는 브라우저 실시간 대전 액션">
     <style>
-        html, body { margin: 0; height: 100%; background: #14161c; color: #e8e8ee;
+        html, body { margin: 0; min-height: 100%; background: #101218; color: #e8e8ee;
             font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
-        body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        canvas { background: #1d2029; border-radius: 10px; box-shadow: 0 0 0 1px #2c3040; cursor: crosshair;
-            max-width: 100vw; }
-        .help { font-size: 13px; color: #9aa0b4; }
-        .help b { color: #e8e8ee; }
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+            min-height: 100vh; padding: 12px 0; box-sizing: border-box; }
+        .top { width: min(960px, calc(100vw - 32px)); display: flex; align-items: center; gap: 8px; }
+        .top .logo { font-weight: 800; letter-spacing: 1px; margin-right: auto; font-size: 15px; color: #c3c7d6; }
+        .top button { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #2f3446;
+            background: #1c1f2a; color: #e8e8ee; cursor: pointer; }
+        .top button:hover { border-color: #4a5068; }
         .stage { position: relative; }
-        #join { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        canvas { display: block; background: #1d2029; border-radius: 10px; box-shadow: 0 0 0 1px #2c3040, 0 12px 40px rgba(0,0,0,.45);
+            cursor: crosshair; max-width: calc(100vw - 16px); height: auto; }
+        .help { font-size: 13px; color: #9aa0b4; text-align: center; padding: 0 16px; }
+        .help b { color: #e8e8ee; }
+
+        .overlay, .modal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             background: rgba(10, 12, 18, .72); border-radius: 10px; }
-        #join[hidden] { display: none; }
-        #join .card { background: #232735; border: 1px solid #3a3f55; border-radius: 12px; padding: 22px 26px;
-            width: min(320px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 12px; }
-        #join h2 { margin: 0; font-size: 18px; }
-        #join label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #9aa0b4; }
-        #join input { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3f55;
-            background: #171a23; color: #e8e8ee; text-transform: none; }
+        .modal { position: fixed; border-radius: 0; z-index: 10; }
+        .overlay[hidden], .modal[hidden], [hidden] { display: none !important; }
+        .card { background: #232735; border: 1px solid #3a3f55; border-radius: 12px; padding: 22px 26px;
+            width: min(340px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+        .card.wide { width: min(560px, calc(100vw - 32px)); }
+        .card h2 { margin: 0; font-size: 18px; }
+        .card label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #9aa0b4; }
+        .card input { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 8px; border: 1px solid #3a3f55;
+            background: #171a23; color: #e8e8ee; }
         #join-room { text-transform: uppercase; }
-        #join .row { display: flex; gap: 8px; }
-        #join button { flex: 1; font: inherit; font-size: 15px; padding: 9px; border-radius: 8px; border: 0; cursor: pointer; }
-        #join button[type=submit] { background: #e0a83a; color: #1a1406; font-weight: 700; }
-        #join-back { background: #33384a; color: #e8e8ee; }
-        #join .hint { font-size: 12px; color: #7d8398; margin: 0; }
+        .row { display: flex; gap: 8px; }
+        .card button { flex: 1; font: inherit; font-size: 15px; padding: 9px; border-radius: 8px; border: 0; cursor: pointer;
+            background: #33384a; color: #e8e8ee; }
+        .card button.primary { background: #e0a83a; color: #1a1406; font-weight: 700; }
+        .card button.link { background: none; color: #8fb7ff; padding: 0; flex: none; font-size: 13px; text-decoration: underline; }
+        .hint { font-size: 12px; color: #7d8398; margin: 0; line-height: 1.5; }
+        .err { color: #ff7a7a; font-size: 13px; min-height: 1em; margin: 0; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chips:empty { display: none; }
+        .card .chip { flex: none; font-size: 12px; padding: 4px 9px; border-radius: 999px; background: #1a1d27; border: 1px solid #3a3f55; }
+        .account { font-size: 14px; background: #1a1d27; border-radius: 8px; padding: 8px 10px; }
+        .account b { color: #ffd84a; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid #2f3446; }
+        th { color: #9aa0b4; font-weight: 600; font-size: 12px; }
+        th:nth-child(2), td:nth-child(2) { text-align: left; }
+        td:first-child { color: #ffd84a; font-weight: 700; }
+        tr.me td { background: #2f2a1a; }
+        td[colspan] { text-align: center !important; color: #9aa0b4 !important; font-weight: 400 !important; }
+        .table-wrap { max-height: 60vh; overflow: auto; }
     </style>
 </head>
 <body>
+<div class="top">
+    <span class="logo">원소 난투</span>
+    <button id="rank-btn" type="button">순위표</button>
+    <button id="mute-btn" type="button">소리 켜짐</button>
+    <button id="auth-btn" type="button">로그인</button>
+</div>
 <div class="stage">
     <canvas id="game" width="960" height="640"></canvas>
-    <form id="join" hidden autocomplete="off">
+    <form id="join" class="overlay" hidden autocomplete="off">
         <div class="card">
             <h2>방 입장 · <span id="join-char"></span></h2>
-            <label>이름 <input id="join-name" maxlength="10" placeholder="최대 10자"></label>
+            <div id="join-guest">
+                <label>이름 (손님) <input id="join-name" maxlength="10" placeholder="최대 10자"></label>
+                <p class="hint">로그인하면 전적이 저장되고 순위표에 올라가요. <button id="join-login" class="link" type="button">로그인 / 가입</button></p>
+            </div>
+            <div id="join-account" class="account" hidden><b id="join-account-name"></b> 으로 들어가요 (전적 저장)</div>
             <label>방 코드 <input id="join-room" maxlength="12" placeholder="LOBBY"></label>
-            <p class="hint">같은 방 코드를 입력한 친구와 대결해요 (2~4명). 혼자면 연습 모드예요.</p>
+            <div id="join-rooms" class="chips"></div>
+            <p class="hint">같은 방 코드를 입력한 친구와 대결해요 (최대 4명). 사람이 모자라면 봇이 채워요.</p>
             <div class="row">
                 <button type="button" id="join-back">뒤로</button>
-                <button type="submit">입장</button>
+                <button type="submit" class="primary">입장</button>
             </div>
         </div>
     </form>
 </div>
 <div class="help">
-    <b>WASD</b> 이동 · <b>마우스</b> 조준 · <b>좌클릭</b> 기본 공격 · <b>Q / E</b> 스킬 · <b>R</b> 필살기 ·
-    <b>Esc</b> 방 나가기
+    <b>WASD</b> 이동 · <b>마우스</b> 조준 · <b>좌클릭</b> 기본 공격 · <b>Q / E</b> 스킬 · <b>R</b> 또는 <b>Space</b> 필살기 ·
+    <b>M</b> 소리 · <b>Esc</b> 방 나가기
 </div>
+
+<div id="auth-modal" class="modal" hidden>
+    <form class="card" autocomplete="on" onsubmit="return false">
+        <div id="auth-forms">
+            <div class="card" style="padding:0;border:0;background:none;width:auto">
+                <h2>로그인 / 가입</h2>
+                <label>이름 <input id="auth-user" maxlength="12" placeholder="2~12자 한글, 영문, 숫자" autocomplete="username"></label>
+                <label>비밀번호 <input id="auth-pass" type="password" maxlength="64" placeholder="4자 이상" autocomplete="current-password"></label>
+                <p id="auth-error" class="err"></p>
+                <div class="row">
+                    <button id="auth-signup" type="button">새로 가입</button>
+                    <button id="auth-login" type="submit" class="primary">로그인</button>
+                </div>
+                <p class="hint">전적은 사람 2명 이상이 함께한 판만 기록돼요 (봇전 제외).</p>
+            </div>
+        </div>
+        <div id="auth-profile" hidden>
+            <div class="card" style="padding:0;border:0;background:none;width:auto">
+                <h2 id="auth-profile-name"></h2>
+                <p id="auth-profile-stats" class="account"></p>
+                <button id="auth-logout" type="button">로그아웃</button>
+            </div>
+        </div>
+        <button type="button" data-close="auth-modal">닫기</button>
+    </form>
+</div>
+
+<div id="rank-modal" class="modal" hidden>
+    <div class="card wide">
+        <h2>순위표</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>#</th><th>이름</th><th>승</th><th>판</th><th>처치</th><th>K/D</th></tr></thead>
+                <tbody id="rank-body"></tbody>
+            </table>
+        </div>
+        <button type="button" data-close="rank-modal">닫기</button>
+    </div>
+</div>
+
+<script src="js/sfx.js"></script>
 <script src="js/sprites.js"></script>
 <script src="js/game.js"></script>
 </body>

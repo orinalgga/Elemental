@@ -10,6 +10,7 @@ public abstract class Unit {
     public double hp, maxHp;
     public double slowUntil, stunUntil, shieldUntil, hurtAt = -10;
     public int facing = 1;
+    public double vx, vy;          // 지난 틱 이동 속도 (봇 조준 예측용)
 
     protected Unit(String id) {
         this.id = id;
