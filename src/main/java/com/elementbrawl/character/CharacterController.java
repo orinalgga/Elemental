@@ -11,7 +11,7 @@ import java.util.Map;
 @RequestMapping("/api")
 public class CharacterController {
 
-    static final List<CharacterSpec> CHARACTERS = List.of(
+    public static final List<CharacterSpec> CHARACTERS = List.of(
             new CharacterSpec("hwarang", "화랑", Element.FIRE, "원거리 폭발형", 90, 100, 200, "#ff6b3d",
                     List.of("화염구", "세 갈래 화염", "불기둥", "대폭발")),
             new CharacterSpec("sua", "수아", Element.WATER, "회복과 방해", 100, 110, 200, "#3da5ff",
@@ -21,6 +21,10 @@ public class CharacterController {
             new CharacterSpec("gangdol", "강돌", Element.EARTH, "탱커", 130, 90, 165, "#c8954a",
                     List.of("바위 주먹", "돌 던지기", "바위 갑옷", "대지 강타"))
     );
+
+    public static CharacterSpec find(String id) {
+        return CHARACTERS.stream().filter(c -> c.id().equals(id)).findFirst().orElse(CHARACTERS.get(0));
+    }
 
     @GetMapping("/characters")
     public List<CharacterSpec> characters() {
