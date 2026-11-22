@@ -18,6 +18,15 @@ public class Player extends Unit {
     public double respawnAt = -1;
     public int kills;
     public int wins;
+    public int roundKills;
+    public double hasteUntil, powerUntil;
+    public double zoneAcc;
+    public boolean inRound;
+
+    // 봇이면 null 이 아님
+    public Bots.Brain brain;
+    // 로그인한 사람이면 계정 번호 (손님은 null)
+    public Long accountId;
 
     // 입력 (클라이언트가 보낸 마지막 값)
     public boolean up, down, left, right, fire;
@@ -41,10 +50,16 @@ public class Player extends Unit {
         mp = maxMp;
         ult = 0;
         readyAtk = readyQ = readyE = 0;
-        slowUntil = stunUntil = shieldUntil = 0;
+        slowUntil = stunUntil = shieldUntil = hasteUntil = powerUntil = 0;
+        roundKills = 0;
+        zoneAcc = 0;
         dash = null;
         respawnAt = -1;
         casts.clear();
+    }
+
+    public boolean bot() {
+        return brain != null;
     }
 
     public static final class Dash {

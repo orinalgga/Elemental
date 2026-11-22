@@ -120,8 +120,8 @@ final class Skills {
     private static double[] aimPoint(Player p, double maxRange) {
         double d = Math.min(maxRange, p.aimDist);
         return new double[]{
-                Room.clamp(p.x + Math.cos(p.aim) * d, Room.AX, Room.AX + Room.AW),
-                Room.clamp(p.y + Math.sin(p.aim) * d, Room.AY, Room.AY + Room.AH)
+                Room.clamp(p.x + Math.cos(p.aim) * d, Arena.AX, Arena.AX + Arena.AW),
+                Room.clamp(p.y + Math.sin(p.aim) * d, Arena.AY, Arena.AY + Arena.AH)
         };
     }
 }
