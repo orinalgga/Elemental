@@ -1,0 +1,219 @@
+{
+  "_설명": "art/pixel/make_sprites.py 로 만든 도트 시트. 캐릭터: 줄 = 방향(앞, 옆, 뒤), 칸 = 서기, 왼발, 오른발. 허수아비: 칸 0 보통, 칸 1 맞음.",
+  "hwarang": {
+    "src": "hwarang.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "directions": {
+      "down": 0,
+      "side": 1,
+      "up": 2
+    },
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "walk": {
+        "frames": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "fps": 8
+      }
+    }
+  },
+  "sua": {
+    "src": "sua.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "directions": {
+      "down": 0,
+      "side": 1,
+      "up": 2
+    },
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "walk": {
+        "frames": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "fps": 8
+      }
+    }
+  },
+  "punghu": {
+    "src": "punghu.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "directions": {
+      "down": 0,
+      "side": 1,
+      "up": 2
+    },
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "walk": {
+        "frames": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "fps": 8
+      }
+    }
+  },
+  "gangdol": {
+    "src": "gangdol.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "directions": {
+      "down": 0,
+      "side": 1,
+      "up": 2
+    },
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "walk": {
+        "frames": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "fps": 8
+      }
+    }
+  },
+  "dummy-fire": {
+    "src": "dummy-fire.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "hurt": {
+        "frames": [
+          1
+        ],
+        "fps": 0
+      }
+    }
+  },
+  "dummy-water": {
+    "src": "dummy-water.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "hurt": {
+        "frames": [
+          1
+        ],
+        "fps": 0
+      }
+    }
+  },
+  "dummy-wind": {
+    "src": "dummy-wind.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "hurt": {
+        "frames": [
+          1
+        ],
+        "fps": 0
+      }
+    }
+  },
+  "dummy-earth": {
+    "src": "dummy-earth.png",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "displayHeight": 64,
+    "anchorY": 0.97,
+    "facesRight": true,
+    "pixelArt": true,
+    "anims": {
+      "idle": {
+        "frames": [
+          0
+        ],
+        "fps": 0
+      },
+      "hurt": {
+        "frames": [
+          1
+        ],
+        "fps": 0
+      }
+    }
+  }
+}
